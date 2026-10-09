@@ -1,0 +1,10 @@
+node_modules/
+web/dist/
+web/node_modules/
+server/node_modules/
+*.log
+data.db*
+config.yml
+.env
+.DS_Store
+Thumbs.db

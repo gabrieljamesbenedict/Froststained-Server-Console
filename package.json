@@ -1,0 +1,17 @@
+{
+  "name": "froststained-server-console",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Minecraft Java server management console for LAN",
+  "license": "GPL-3.0-or-later",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev -w server",
+    "dev:web": "npm run dev -w web",
+    "build": "npm run build -w web",
+    "start": "npm run start -w server"
+  }
+}

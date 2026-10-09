@@ -1,0 +1,21 @@
+# Froststained port (LAN bind 0.0.0.0)
+port: 3100
+host: "0.0.0.0"
+
+# Existing Minecraft Java server folder (adopt-existing flow).
+# Example Windows: "D:/MC-Survival"
+# Example Linux: "/home/user/mc-survival"
+server_path: "./mc-server"
+
+# RCON (required for player commands when console owns the process)
+rcon:
+  host: "127.0.0.1"
+  port: 25575
+  password: "change-me"
+
+# CurseForge API key (user-provided, Modrinth needs no key)
+curseforge_api_key: ""
+
+# Runtime data (SQLite + backups co-located with exe in portable mode)
+data_file: "./data.db"
+backup_dir: "./backups"
