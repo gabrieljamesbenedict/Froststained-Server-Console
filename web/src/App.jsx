@@ -431,6 +431,88 @@ function Mods() {
   );
 }
 
+function Backups() {
+  const [data, setData] = useState(null);
+  const [sched, setSched] = useState(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const refresh = async () => {
+    try {
+      setData(await api('/api/backups'));
+      setSched(await api('/api/schedule'));
+      setError('');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const create = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await api('/api/backups', { method: 'POST' });
+      refresh();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (f) => {
+    if (!window.confirm(`Delete ${f}?`)) return;
+    setError('');
+    try {
+      await api(`/api/backups/${encodeURIComponent(f)}`, { method: 'DELETE' });
+      refresh();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const restore = async (f) => {
+    if (!window.confirm(`Restore ${f}? The server must be stopped; the current world is overwritten (a safety snapshot is kept).`)) return;
+    setError('');
+    try {
+      await api(`/api/backups/${encodeURIComponent(f)}/restore`, { method: 'POST' });
+      refresh();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  if (!data) return <section><h2>Backups</h2><p>Loading…</p></section>;
+  return (
+    <section>
+      <h2>Backups ({data.count})</h2>
+      <button onClick={create} disabled={busy}>{busy ? 'Backing up…' : 'Create backup'}</button>{' '}
+      <button onClick={refresh}>Refresh</button>
+      {sched && (
+        <p style={{ fontSize: 12 }}>
+          Schedule: backup every {sched.backupEveryHours || 'off'}h · restart at {sched.restartDailyAt || 'off'}
+          {sched.lastBackupError && <span style={{ color: 'crimson' }}> · last error: {sched.lastBackupError}</span>}
+        </p>
+      )}
+      {error && <p style={{ color: 'crimson' }}>{error}</p>}
+      <ul>
+        {data.backups.map((b) => (
+          <li key={b.file}>
+            {b.file} ({Math.round(b.sizeKb / 1024)} MB){' '}
+            <a href={`/api/backups/${encodeURIComponent(b.file)}/download`}>Download</a>{' '}
+            <button onClick={() => restore(b.file)}>Restore</button>{' '}
+            <button onClick={() => remove(b.file)}>Delete</button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export default function App() {
   const [state, setState] = useState({ loading: true, needsSetup: false, user: null });
 
@@ -469,6 +551,7 @@ export default function App() {
           <Console />
           <Players />
           <Mods />
+          <Backups />
           <Dashboard />
         </>
       ) : (

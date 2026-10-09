@@ -24,7 +24,7 @@ function killTree(pid) {
   });
 }
 
-function readServerPort(serverPath) {
+export function readServerPort(serverPath) {
   try {
     const props = fs.readFileSync(path.join(serverPath, 'server.properties'), 'utf8');
     for (const line of props.split(/\r?\n/)) {
@@ -56,6 +56,12 @@ function portBusy(port, timeoutMs = 1500) {
       resolve(false);
     }, timeoutMs);
   });
+}
+
+// Is this server's game port already bound? Used to refuse starts and flag
+// stopped-but-busy states (e.g. an orphaned fork still holding the world).
+export async function serverPortBusy(serverPath) {
+  return portBusy(readServerPort(serverPath));
 }
 
 // Owns the single Minecraft Java child process: spawn, graceful stop, kill,
@@ -110,7 +116,7 @@ export class ProcessManager extends EventEmitter {
       throw err;
     }
     const port = readServerPort(this.serverPath);
-    if (await portBusy(port)) {
+    if (await serverPortBusy(this.serverPath)) {
       const err = new Error(`server-port ${port} is already in use - another server may be running`);
       err.code = 'PORT_BUSY';
       throw err;
