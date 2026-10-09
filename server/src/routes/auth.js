@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { audit } from '../db.js';
 
-const COOKIE_NAME = 'froststained_session';
+export const COOKIE_NAME = 'froststained_session';
 const SESSION_DAYS = 30;
 const BCRYPT_COST = 12;
 
@@ -34,6 +34,27 @@ function newSession(db, userId) {
   return token;
 }
 
+export function parseSessionToken(cookieHeader) {
+  if (!cookieHeader) return null;
+  for (const part of cookieHeader.split(';')) {
+    const [k, ...v] = part.trim().split('=');
+    if (k === COOKIE_NAME) return decodeURIComponent(v.join('='));
+  }
+  return null;
+}
+
+export function getUserFromToken(db, token) {
+  if (!token) return null;
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(Date.now());
+  return (
+    db
+      .prepare(
+        'SELECT u.id, u.username, u.role FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?',
+      )
+      .get(tokenHash) ?? null
+  );
+}
 function setSessionCookie(reply, token) {
   // secure:false because LAN installs run over plain HTTP; enable when HTTPS is added.
   reply.setCookie(COOKIE_NAME, token, {
@@ -47,26 +68,6 @@ function setSessionCookie(reply, token) {
 
 export default async function authRoutes(app) {
   const db = app.db;
-
-  app.decorate('requireAuth', async (req, reply) => {
-    const token = req.cookies?.[COOKIE_NAME];
-    if (!token) {
-      reply.code(401).send({ error: 'not authenticated' });
-      return;
-    }
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(Date.now());
-    const row = db
-      .prepare(
-        'SELECT u.id, u.username, u.role FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?',
-      )
-      .get(tokenHash);
-    if (!row) {
-      reply.code(401).send({ error: 'not authenticated' });
-      return;
-    }
-    req.user = row;
-  });
 
   app.get('/api/auth/status', async () => {
     const { count } = db.prepare('SELECT COUNT(*) AS count FROM users').get();

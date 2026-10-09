@@ -6,6 +6,8 @@ const DEFAULTS = {
   host: '0.0.0.0',
   port: 3100,
   server_path: './mc-server',
+  launch: { java: 'java', args: null }, // null args => ['-jar', 'server.jar', 'nogui']
+  stop_timeout_ms: 60000,
   rcon: { host: '127.0.0.1', port: 25575, password: 'change-me' },
   curseforge_api_key: '',
   data_file: './data.db',
@@ -35,6 +37,7 @@ export function loadConfig(argv = process.argv) {
   const merged = {
     ...DEFAULTS,
     ...file,
+    launch: { ...DEFAULTS.launch, ...((file && file.launch) ?? {}) },
     rcon: { ...DEFAULTS.rcon, ...((file && file.rcon) ?? {}) },
   };
 
@@ -46,6 +49,15 @@ export function loadConfig(argv = process.argv) {
   if (!host || typeof host !== 'string') fail('host must be a non-empty string');
   if (!Number.isInteger(port) || port < 1 || port > 65535) fail(`port must be 1-65535 (got ${port})`);
   if (!merged.server_path || typeof merged.server_path !== 'string') fail('server_path must be set');
+  if (!merged.launch.java || typeof merged.launch.java !== 'string') fail('launch.java must be set');
+  const launchArgs = merged.launch.args ?? ['-jar', 'server.jar', 'nogui'];
+  if (!Array.isArray(launchArgs) || launchArgs.some((a) => typeof a !== 'string')) {
+    fail('launch.args must be a list of strings');
+  }
+  const stopTimeoutMs = Number(merged.stop_timeout_ms);
+  if (!Number.isInteger(stopTimeoutMs) || stopTimeoutMs < 5000) {
+    fail(`stop_timeout_ms must be an integer >= 5000 (got ${merged.stop_timeout_ms})`);
+  }
   if (!Number.isInteger(merged.rcon.port) || merged.rcon.port < 1 || merged.rcon.port > 65535) {
     fail(`rcon.port must be 1-65535 (got ${merged.rcon.port})`);
   }
@@ -54,6 +66,8 @@ export function loadConfig(argv = process.argv) {
     host,
     port,
     serverPath: path.resolve(merged.server_path),
+    launch: { java: merged.launch.java, args: launchArgs },
+    stopTimeoutMs,
     rcon: { host: merged.rcon.host, port: merged.rcon.port, password: merged.rcon.password },
     curseforgeApiKey: merged.curseforge_api_key ?? '',
     dataFile: path.resolve(dataFile),

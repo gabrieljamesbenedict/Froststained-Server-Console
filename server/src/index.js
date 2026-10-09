@@ -5,9 +5,12 @@ import Fastify from 'fastify';
 import fastifyCookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
 import healthRoutes from './routes/health.js';
-import authRoutes from './routes/auth.js';
+import authRoutes, { COOKIE_NAME, getUserFromToken } from './routes/auth.js';
+import serverRoutes from './routes/server.js';
+import { attachConsoleWs } from './ws/console.js';
 import { loadConfig } from './config.js';
 import { openDb } from './db.js';
+import { ProcessManager } from './services/processManager.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const DIST = path.join(ROOT, 'web', 'dist');
@@ -23,12 +26,32 @@ try {
 const app = Fastify({ logger: true });
 app.decorate('config', config);
 app.decorate('db', openDb(config.dataFile));
+app.decorate(
+  'mc',
+  new ProcessManager({
+    serverPath: config.serverPath,
+    java: config.launch.java,
+    args: config.launch.args,
+    stopTimeoutMs: config.stopTimeoutMs,
+  }),
+);
 
 await app.register(fastifyCookie);
+// Root-level so every route plugin (auth, server, …) shares one guard.
+app.decorate('requireAuth', async (req, reply) => {
+  const user = getUserFromToken(app.db, req.cookies?.[COOKIE_NAME]);
+  if (!user) {
+    reply.code(401).send({ error: 'not authenticated' });
+    return reply; // halt: without this the route handler still runs
+  }
+  req.user = user;
+});
 app.register(healthRoutes);
 app.register(authRoutes);
+app.register(serverRoutes);
+attachConsoleWs(app);
 
-// TODO (Phase 2): MCProcessManager (single server) + console WS + metrics + mods.
+// TODO (later phases): RCON + players, metrics, mods, backups.
 
 if (fs.existsSync(DIST)) {
   await app.register(fastifyStatic, { root: DIST });
@@ -41,6 +64,9 @@ if (fs.existsSync(DIST)) {
 }
 
 fs.mkdirSync(config.backupDir, { recursive: true });
+if (!fs.existsSync(config.serverPath)) {
+  app.log.warn(`server_path does not exist yet: ${config.serverPath} (server start will fail until it does)`);
+}
 
 const start = async () => {
   try {
