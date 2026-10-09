@@ -7,6 +7,20 @@ host: "0.0.0.0"
 # Example Linux: "/home/user/mc-survival"
 server_path: "./mc-server"
 
+# How the console launches the server (cwd = server_path).
+# Vanilla default: java -jar server.jar nogui
+launch:
+  java: "java"
+  args: null
+# NeoForge example (arg-files, like run.bat uses):
+# launch:
+#   java: "java"
+#   args: ["@user_jvm_args.txt", "@libraries/net/neoforged/neoforge/21.1.248/win_args.txt", "nogui"]
+
+# Graceful stop: send "stop", wait this long, then kill. Modded needs 120s+.
+# The stop/restart response reports stopResult: graceful | killed | already-stopped.
+stop_timeout_ms: 60000
+
 # RCON (required for player commands when console owns the process)
 rcon:
   host: "127.0.0.1"
