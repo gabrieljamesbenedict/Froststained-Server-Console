@@ -10,6 +10,7 @@ import serverRoutes from './routes/server.js';
 import metricsRoutes from './routes/metrics.js';
 import playersRoutes from './routes/players.js';
 import modsRoutes from './routes/mods.js';
+import backupsRoutes from './routes/backups.js';
 import { attachConsoleWs } from './ws/console.js';
 import { loadConfig } from './config.js';
 import { openDb } from './db.js';
@@ -63,6 +64,7 @@ app.register(serverRoutes);
 app.register(metricsRoutes);
 app.register(playersRoutes);
 app.register(modsRoutes);
+app.register(backupsRoutes);
 attachConsoleWs(app);
 
 // TODO (later phases): mods, backups.
