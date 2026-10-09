@@ -3,6 +3,7 @@ import path from 'node:path';
 import AdmZip from 'adm-zip';
 import { audit } from '../db.js';
 import { listMods, modsDir, scanMod } from '../services/modScanner.js';
+import { curseforgeCheck, modrinthCheck } from '../services/modSources.js';
 
 const MAX_UPLOAD_MB = 200;
 
@@ -105,6 +106,45 @@ export default async function modsRoutes(app) {
       fs.rmSync(full);
       audit(app.db, req.user.id, 'mod.delete', base);
       return { ok: true, file: base };
+    } catch (err) {
+      return reply.code(errToStatus(err)).send({ error: err.message });
+    }
+  });
+
+  // Per-mod update check. Needs the MC version (config or ?game_version=)
+  // and the loader (detected, or ?loader= override). Sources are queried
+  // independently; one failing never fails the other.
+  app.get('/api/mods/:file/updates', { preHandler: app.requireAuth }, async (req, reply) => {
+    try {
+      const { full } = resolveModFile(app.config.serverPath, req.params.file);
+      const mod = scanMod(full);
+      const gameVersion = req.query.game_version ?? app.config.minecraftVersion;
+      if (!gameVersion) {
+        return reply.code(400).send({ error: 'set minecraft_version in config or pass ?game_version=' });
+      }
+      const loader = (req.query.loader ?? (mod.loader === 'forge-legacy' ? 'forge' : mod.loader) ?? '').toLowerCase();
+      if (!['forge', 'neoforge', 'fabric', 'quilt'].includes(loader)) {
+        return reply.code(400).send({ error: `cannot check updates: unknown loader (pass ?loader=), got "${mod.loader}"` });
+      }
+      const out = { mod: { file: mod.file, modId: mod.modId, version: mod.version }, gameVersion, loader, modrinth: null, curseforge: null };
+      try {
+        out.modrinth = await modrinthCheck(full, { gameVersion, loader });
+      } catch (err) {
+        out.modrinth = { error: err.message };
+      }
+      const apiKey = app.config.curseforgeApiKey;
+      if (!apiKey) {
+        out.curseforge = { skipped: 'no curseforge_api_key configured' };
+      } else if (!mod.modId) {
+        out.curseforge = { skipped: 'no mod id detected' };
+      } else {
+        try {
+          out.curseforge = await curseforgeCheck(apiKey, mod.modId, { gameVersion, loader });
+        } catch (err) {
+          out.curseforge = { error: err.message };
+        }
+      }
+      return out;
     } catch (err) {
       return reply.code(errToStatus(err)).send({ error: err.message });
     }
