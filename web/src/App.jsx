@@ -318,6 +318,119 @@ function Players() {
   );
 }
 
+function Mods() {
+  const [mods, setMods] = useState(null);
+  const [error, setError] = useState('');
+  const [checks, setChecks] = useState({});
+  const [file, setFile] = useState(null);
+
+  const refresh = async () => {
+    try {
+      setMods(await api('/api/mods'));
+      setError('');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const toggle = async (m) => {
+    setError('');
+    try {
+      await api(`/api/mods/${encodeURIComponent(m.file)}/${m.enabled ? 'disable' : 'enable'}`, { method: 'POST' });
+      refresh();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const remove = async (m) => {
+    if (!window.confirm(`Delete ${m.file}?`)) return;
+    setError('');
+    try {
+      await api(`/api/mods/${encodeURIComponent(m.file)}`, { method: 'DELETE' });
+      refresh();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const check = async (m) => {
+    try {
+      const r = await api(`/api/mods/${encodeURIComponent(m.file)}/updates`);
+      const mr = r.modrinth?.error ? `modrinth: ${r.modrinth.error}` : `modrinth: ${r.modrinth.installedVersion} → ${r.modrinth.latestVersion}${r.modrinth.upToDate ? ' (current)' : ' (UPDATE)'}`;
+      const cf = r.curseforge?.skipped ? `cf: ${r.curseforge.skipped}` : r.curseforge?.error ? `cf: ${r.curseforge.error}` : `cf: ${r.curseforge.latestFile || 'not found'}`;
+      setChecks((c) => ({ ...c, [m.file]: `${mr}; ${cf}` }));
+    } catch (err) {
+      setChecks((c) => ({ ...c, [m.file]: err.message }));
+    }
+  };
+
+  const upload = async (e) => {
+    e.preventDefault();
+    if (!file) return;
+    setError('');
+    try {
+      const form = new FormData();
+      form.append('mod', file);
+      const res = await fetch('/api/mods/upload', { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `upload failed (${res.status})`);
+      setFile(null);
+      e.target.reset();
+      refresh();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  if (!mods) return <section><h2>Mods</h2><p>Loading…</p></section>;
+  return (
+    <section>
+      <h2>Mods ({mods.count})</h2>
+      <form onSubmit={upload} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <input type="file" accept=".jar" onChange={(e) => setFile(e.target.files[0])} />
+        <button type="submit">Upload</button>
+        <button type="button" onClick={refresh}>Refresh</button>
+      </form>
+      {error && <p style={{ color: 'crimson' }}>{error}</p>}
+      <table>
+        <thead>
+          <tr>
+            <th align="left">Mod</th>
+            <th align="left">Version</th>
+            <th align="left">Loader</th>
+            <th align="right">KB</th>
+            <th align="left">State</th>
+            <th align="left">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {mods.mods.map((m) => (
+            <tr key={m.file}>
+              <td>{m.name}</td>
+              <td>{m.version ?? '?'}</td>
+              <td>{m.loader}</td>
+              <td align="right">{m.sizeKb}</td>
+              <td>{m.enabled ? 'on' : 'off'}</td>
+              <td>
+                <button onClick={() => toggle(m)}>{m.enabled ? 'Disable' : 'Enable'}</button>{' '}
+                <button onClick={() => remove(m)}>Delete</button>{' '}
+                <button onClick={() => check(m)}>Updates</button>
+                {checks[m.file] && <div style={{ fontSize: 12 }}>{checks[m.file]}</div>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p style={{ fontSize: 12 }}>Mod changes apply on server restart. Update checks need <code>minecraft_version</code> in console config.</p>
+    </section>
+  );
+}
+
 export default function App() {
   const [state, setState] = useState({ loading: true, needsSetup: false, user: null });
 
@@ -355,6 +468,7 @@ export default function App() {
           </p>
           <Console />
           <Players />
+          <Mods />
           <Dashboard />
         </>
       ) : (
