@@ -5,7 +5,7 @@ import { createBackup, listBackups, resolveBackupFile, restoreBackup } from '../
 function errToStatus(err) {
   if (err.code === 'BAD_FILE') return 400;
   if (err.code === 'NOT_FOUND' || err.code === 'NO_WORLD') return 404;
-  if (err.code === 'LIVE_NO_RCON' || err.code === 'STILL_RUNNING') return 409;
+  if (err.code === 'LIVE_NO_RCON' || err.code === 'STILL_RUNNING' || err.code === 'PORT_BUSY') return 409;
   return 500;
 }
 

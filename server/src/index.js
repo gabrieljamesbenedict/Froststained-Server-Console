@@ -94,6 +94,28 @@ if (!fs.existsSync(config.serverPath)) {
   app.log.warn(`server_path does not exist yet: ${config.serverPath} (server start will fail until it does)`);
 }
 
+// Never orphan the MC server when the console itself is stopped: attempt a
+// graceful stop first, capped so Ctrl+C / service stops don't hang.
+let shuttingDown = false;
+async function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  app.log.info(`received ${signal}, stopping managed server if running`);
+  try {
+    await Promise.race([
+      (async () => {
+        if (app.mc.status().state !== 'stopped') await app.mc.stop();
+      })(),
+      new Promise((r) => setTimeout(r, 30000)),
+    ]);
+  } catch {
+    // best-effort only
+  }
+  process.exit(0);
+}
+process.on('SIGINT', () => void shutdown('SIGINT'));
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+
 const start = async () => {
   try {
     await app.listen({ host: config.host, port: config.port });
