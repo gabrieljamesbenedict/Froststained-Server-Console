@@ -7,6 +7,7 @@ const DEFAULTS = {
   port: 3100,
   server_path: './mc-server',
   minecraft_version: null, // e.g. "1.21.1" - used for mod update checks
+  schedule: { backup_every_hours: 0, restart_daily_at: '' },
   launch: { java: 'java', args: null }, // null args => ['-jar', 'server.jar', 'nogui']
   stop_timeout_ms: 60000,
   rcon: { host: '127.0.0.1', port: 25575, password: 'change-me' },
@@ -40,6 +41,7 @@ export function loadConfig(argv = process.argv) {
     ...file,
     launch: { ...DEFAULTS.launch, ...((file && file.launch) ?? {}) },
     rcon: { ...DEFAULTS.rcon, ...((file && file.rcon) ?? {}) },
+    schedule: { ...DEFAULTS.schedule, ...((file && file.schedule) ?? {}) },
   };
 
   const port = Number(flag(argv, '--port') ?? process.env.PORT ?? merged.port);
@@ -63,6 +65,12 @@ export function loadConfig(argv = process.argv) {
   if (!Number.isInteger(stopTimeoutMs) || stopTimeoutMs < 5000) {
     fail(`stop_timeout_ms must be an integer >= 5000 (got ${merged.stop_timeout_ms})`);
   }
+  const backupEveryHours = Number(merged.schedule.backup_every_hours ?? 0);
+  if (!(backupEveryHours >= 0)) fail('schedule.backup_every_hours must be a number >= 0');
+  const restartDailyAt = merged.schedule.restart_daily_at ?? '';
+  if (restartDailyAt !== '' && !/^\d{2}:\d{2}$/.test(restartDailyAt)) {
+    fail('schedule.restart_daily_at must be "" or "HH:MM"');
+  }
   if (!Number.isInteger(merged.rcon.port) || merged.rcon.port < 1 || merged.rcon.port > 65535) {
     fail(`rcon.port must be 1-65535 (got ${merged.rcon.port})`);
   }
@@ -74,6 +82,7 @@ export function loadConfig(argv = process.argv) {
     minecraftVersion: mcVersion,
     launch: { java: merged.launch.java, args: launchArgs },
     stopTimeoutMs,
+    schedule: { backupEveryHours, restartDailyAt },
     rcon: { host: merged.rcon.host, port: merged.rcon.port, password: merged.rcon.password },
     curseforgeApiKey: merged.curseforge_api_key ?? '',
     dataFile: path.resolve(dataFile),

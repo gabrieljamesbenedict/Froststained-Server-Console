@@ -24,6 +24,12 @@ launch:
 # The stop/restart response reports stopResult: graceful | killed | already-stopped.
 stop_timeout_ms: 60000
 
+# Scheduled tasks (0 / "" = off). Restart fires once daily after the set
+# time while the server runs; backups reuse the backup rules (live needs RCON).
+schedule:
+  backup_every_hours: 0
+  restart_daily_at: ""
+
 # RCON (required for player commands when console owns the process)
 rcon:
   host: "127.0.0.1"

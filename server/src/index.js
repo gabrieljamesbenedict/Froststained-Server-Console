@@ -11,6 +11,7 @@ import metricsRoutes from './routes/metrics.js';
 import playersRoutes from './routes/players.js';
 import modsRoutes from './routes/mods.js';
 import backupsRoutes from './routes/backups.js';
+import scheduleRoutes from './routes/schedule.js';
 import { attachConsoleWs } from './ws/console.js';
 import { loadConfig } from './config.js';
 import { openDb } from './db.js';
@@ -19,6 +20,8 @@ import { RconService } from './services/rcon.js';
 import { SystemMetrics } from './services/systemMetrics.js';
 import { PlayerTracker } from './services/playerTracker.js';
 import { processTree } from './services/processTree.js';
+import { Scheduler } from './services/scheduler.js';
+import { createBackup } from './services/backups.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const DIST = path.join(ROOT, 'web', 'dist');
@@ -47,6 +50,12 @@ app.decorate('metrics', metrics);
 app.decorate('players', new PlayerTracker(mc, config.serverPath));
 app.decorate('processTree', processTree);
 app.decorate('rcon', new RconService(config.rcon));
+const scheduler = new Scheduler({
+  backupEveryHours: config.schedule.backupEveryHours,
+  restartDailyAt: config.schedule.restartDailyAt,
+});
+scheduler.start({ config, mc, rcon: app.rcon, db: app.db, createBackup });
+app.decorate('scheduler', scheduler);
 
 await app.register(fastifyCookie);
 // Root-level so every route plugin (auth, server, …) shares one guard.
@@ -65,6 +74,7 @@ app.register(metricsRoutes);
 app.register(playersRoutes);
 app.register(modsRoutes);
 app.register(backupsRoutes);
+app.register(scheduleRoutes);
 attachConsoleWs(app);
 
 // TODO (later phases): mods, backups.
