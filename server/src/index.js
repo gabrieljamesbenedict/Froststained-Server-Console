@@ -8,10 +8,12 @@ import healthRoutes from './routes/health.js';
 import authRoutes, { COOKIE_NAME, getUserFromToken } from './routes/auth.js';
 import serverRoutes from './routes/server.js';
 import metricsRoutes from './routes/metrics.js';
+import playersRoutes from './routes/players.js';
 import { attachConsoleWs } from './ws/console.js';
 import { loadConfig } from './config.js';
 import { openDb } from './db.js';
 import { ProcessManager } from './services/processManager.js';
+import { RconService } from './services/rcon.js';
 import { SystemMetrics } from './services/systemMetrics.js';
 import { PlayerTracker } from './services/playerTracker.js';
 import { processTree } from './services/processTree.js';
@@ -42,6 +44,7 @@ metrics.start(config.serverPath);
 app.decorate('metrics', metrics);
 app.decorate('players', new PlayerTracker(mc, config.serverPath));
 app.decorate('processTree', processTree);
+app.decorate('rcon', new RconService(config.rcon));
 
 await app.register(fastifyCookie);
 // Root-level so every route plugin (auth, server, …) shares one guard.
@@ -57,9 +60,10 @@ app.register(healthRoutes);
 app.register(authRoutes);
 app.register(serverRoutes);
 app.register(metricsRoutes);
+app.register(playersRoutes);
 attachConsoleWs(app);
 
-// TODO (later phases): RCON + player actions, mods, backups.
+// TODO (later phases): mods, backups.
 
 if (fs.existsSync(DIST)) {
   await app.register(fastifyStatic, { root: DIST });
