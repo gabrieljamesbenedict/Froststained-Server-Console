@@ -2,7 +2,7 @@ import { audit } from '../db.js';
 import { readLogTail } from '../services/logTail.js';
 
 function errToStatus(err) {
-  if (err.code === 'ALREADY_RUNNING') return 409;
+  if (err.code === 'ALREADY_RUNNING' || err.code === 'PORT_BUSY') return 409;
   if (err.code === 'NOT_RUNNING' || err.code === 'BAD_COMMAND') return 400;
   return 500;
 }
@@ -19,7 +19,7 @@ export default async function serverRoutes(app) {
 
   app.post('/api/server/start', { preHandler: app.requireAuth }, async (req, reply) => {
     try {
-      const status = mc.start();
+      const status = await mc.start();
       audit(app.db, req.user.id, 'server.start', `pid ${status.pid}`);
       return status;
     } catch (err) {
