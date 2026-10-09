@@ -25,7 +25,8 @@ instance (2 servers = 2 console copies on different ports via `--port/--config`)
   - Types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`
   - Scopes: `web`, `server`, `mods`, `metrics`, `auth`, `config`, `repo`
   - Subject: imperative, lowercase, no trailing period, max ~72 chars
-  - Always include a body explaining what and why
+  - Always include a body explaining what and why; use bullet points for
+    longer bodies (one `- ` line per change)
   - Example:
     `fix(web): bind dev server to all interfaces for IPv4 and LAN access`
 - Stage with `git add <paths>` (avoid blind `git add -A` once runtime files exist;
