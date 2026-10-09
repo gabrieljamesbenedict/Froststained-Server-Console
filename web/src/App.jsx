@@ -148,6 +148,91 @@ function Console() {
   );
 }
 
+function Dashboard() {
+  const [m, setM] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let alive = true;
+    const poll = async () => {
+      try {
+        const data = await api('/api/metrics');
+        if (alive) {
+          setM(data);
+          setError('');
+        }
+      } catch (err) {
+        if (alive) setError(err.message);
+      }
+    };
+    poll();
+    const t = setInterval(poll, 5000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, []);
+
+  if (error) return <p style={{ color: 'crimson' }}>metrics: {error}</p>;
+  if (!m?.system?.latest) return <p>Loading metrics…</p>;
+  const s = m.system.latest;
+  return (
+    <section>
+      <h2>Metrics</h2>
+      <p>
+        CPU <strong>{s.cpu.loadPct}%</strong> · RAM <strong>{s.mem.usedMb}/{s.mem.totalMb} MB ({s.mem.usedPct}%)</strong> ·
+        Host uptime <strong>{Math.round(s.uptimeSec / 3600)}h</strong> · Players <strong>{m.server.players.count}</strong>
+      </p>
+      {m.server.players.count > 0 && <p>{m.server.players.players.map((p) => p.name).join(', ')}</p>}
+      <h3>Disks</h3>
+      <ul>
+        {s.disks.map((d) => (
+          <li key={d.mount + d.fs}>{d.mount} ({d.fs}): {d.usedPct}% of {Math.round(d.sizeMb / 1024)} GB</li>
+        ))}
+      </ul>
+      <h3>Network (KB/s)</h3>
+      <ul>
+        {s.net.map((n) => (
+          <li key={n.iface}>{n.iface}: ↓{n.rxSecKb} ↑{n.txSecKb}</li>
+        ))}
+      </ul>
+      <h3>MC process</h3>
+      {!m.process.running ? (
+        <p>Server process not running.</p>
+      ) : (
+        <>
+          <p>
+            PID {m.process.rootPid}: CPU <strong>{m.process.totalCpuPct}%</strong> · RAM{' '}
+            <strong>{m.process.totalMemMb} MB</strong> · threads <strong>{m.process.totalThreads}</strong>
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th align="left">PID</th>
+                <th align="left">Name</th>
+                <th align="right">CPU%</th>
+                <th align="right">RSS MB</th>
+                <th align="right">Threads</th>
+              </tr>
+            </thead>
+            <tbody>
+              {m.process.processes.map((p) => (
+                <tr key={p.pid}>
+                  <td>{p.pid}</td>
+                  <td>{p.name}</td>
+                  <td align="right">{p.cpuPct}</td>
+                  <td align="right">{p.memRssMb}</td>
+                  <td align="right">{p.threads ?? '?'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+    </section>
+  );
+}
+
 export default function App() {
   const [state, setState] = useState({ loading: true, needsSetup: false, user: null });
 
@@ -184,6 +269,7 @@ export default function App() {
             <button onClick={logout}>Sign out</button>
           </p>
           <Console />
+          <Dashboard />
         </>
       ) : (
         <AuthForm mode="login" onDone={(user) => setState({ loading: false, needsSetup: false, user })} />
