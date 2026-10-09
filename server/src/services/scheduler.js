@@ -15,6 +15,10 @@ export class Scheduler {
     this.deps = deps;
     // Don't fire immediately on boot: anchor "last" to now when enabling.
     if (this.backupEveryMs > 0 && !this.lastBackupAt) this.lastBackupAt = Date.now();
+    // A restart time already past today must wait for tomorrow, not fire now.
+    if (this.restartDailyAt && !this.lastRestartAt && this.dueRestart(Date.now())) {
+      this.lastRestartAt = Date.now();
+    }
     this.timer = setInterval(() => void this.tick().catch(() => {}), 60000);
     if (this.timer.unref) this.timer.unref();
   }
@@ -43,10 +47,11 @@ export class Scheduler {
       this.lastBackupAt = now;
       try {
         const info = await createBackup({ serverPath: config.serverPath, backupDir: config.backupDir, mc, rcon });
+        this.lastBackupError = null;
         dbAudit(db, `scheduled backup ${info.file}`);
-      } catch {
-        // skipped (e.g. live without RCON): retry next tick window
-        this.lastBackupAt = now;
+      } catch (err) {
+        // Surface in /api/schedule; retry next window.
+        this.lastBackupError = `${new Date(now).toISOString()} ${err.message}`;
       }
     }
     if (this.dueRestart(now) && mc.status().state === 'running') {
@@ -65,6 +70,7 @@ export class Scheduler {
       restartDailyAt: this.restartDailyAt,
       lastBackupAt: this.lastBackupAt,
       lastRestartAt: this.lastRestartAt,
+      lastBackupError: this.lastBackupError ?? null,
       nextBackupAt: this.backupEveryMs > 0 && this.lastBackupAt ? this.lastBackupAt + this.backupEveryMs : null,
     };
   }

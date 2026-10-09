@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import AdmZip from 'adm-zip';
+import { serverPortBusy } from './processManager.js';
 
 // World backups as timestamped zips. If the server is running, the world is
 // quiesced first via RCON (save-off, save-all flush) and re-enabled after,
@@ -28,6 +29,32 @@ export function worldDir(serverPath) {
   return path.join(serverPath, readLevelName(serverPath));
 }
 
+// Live worlds lock byte ranges (not just whole files), so a 1-byte probe
+// misses them. Read every file fully up front: unreadable ones are skipped
+// live (and recorded), fatal when stopped so restores stay byte-identical.
+function buildZip(world, quiesced) {
+  const zip = new AdmZip();
+  const skipped = [];
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const f = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        walk(f);
+        continue;
+      }
+      const rel = path.relative(world, f).split(path.sep).join('/');
+      try {
+        zip.addFile(rel, fs.readFileSync(f));
+      } catch (err) {
+        if (!quiesced) throw err;
+        skipped.push(rel);
+      }
+    }
+  };
+  walk(world);
+  return { zip, skipped };
+}
+
 export function backupFileName(date = new Date()) {
   const p = (n) => String(n).padStart(2, '0');
   return `backup-${date.getFullYear()}${p(date.getMonth() + 1)}${p(date.getDate())}-${p(date.getHours())}${p(date.getMinutes())}${p(date.getSeconds())}.zip`;
@@ -42,6 +69,11 @@ export async function createBackup({ serverPath, backupDir, mc, rcon }) {
   }
   fs.mkdirSync(backupDir, { recursive: true });
   const running = mc.status().state === 'running';
+  if (!running && (await serverPortBusy(serverPath))) {
+    const err = new Error('server port is busy although the console shows stopped - another copy may still hold the world');
+    err.code = 'PORT_BUSY';
+    throw err;
+  }
   let quiesced = false;
   if (running) {
     if (!rcon.configured) {
@@ -53,15 +85,15 @@ export async function createBackup({ serverPath, backupDir, mc, rcon }) {
     await rcon.send('save-all flush');
     quiesced = true;
   }
+  // addLocalFolder reads eagerly and reports no filename on EBUSY, so the
+  // zip is built file-by-file above instead.
   try {
     const name = backupFileName();
     const full = path.join(backupDir, name);
-    const zip = new AdmZip();
-    // World contents at zip root so restore extracts straight into the world dir.
-    zip.addLocalFolder(world);
+    const { zip, skipped } = buildZip(world, quiesced);
     zip.writeZip(full);
     const { size } = fs.statSync(full);
-    return { file: name, sizeKb: Math.round(size / 1024), world: readLevelName(serverPath), live: running };
+    return { file: name, sizeKb: Math.round(size / 1024), world: readLevelName(serverPath), live: running, skipped };
   } finally {
     if (quiesced) {
       try {
