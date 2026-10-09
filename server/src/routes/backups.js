@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 import { audit } from '../db.js';
-import { createBackup, listBackups, resolveBackupFile } from '../services/backups.js';
+import { createBackup, listBackups, resolveBackupFile, restoreBackup } from '../services/backups.js';
 
 function errToStatus(err) {
   if (err.code === 'BAD_FILE') return 400;
   if (err.code === 'NOT_FOUND' || err.code === 'NO_WORLD') return 404;
-  if (err.code === 'LIVE_NO_RCON') return 409;
+  if (err.code === 'LIVE_NO_RCON' || err.code === 'STILL_RUNNING') return 409;
   return 500;
 }
 
@@ -46,6 +46,21 @@ export default async function backupsRoutes(app) {
       fs.rmSync(full);
       audit(app.db, req.user.id, 'backup.delete', base);
       return { ok: true, file: base };
+    } catch (err) {
+      return reply.code(errToStatus(err)).send({ error: err.message });
+    }
+  });
+
+  app.post('/api/backups/:file/restore', { preHandler: app.requireAuth }, async (req, reply) => {
+    try {
+      const info = await restoreBackup({
+        serverPath: app.config.serverPath,
+        backupDir: dir(),
+        mc: app.mc,
+        file: req.params.file,
+      });
+      audit(app.db, req.user.id, 'backup.restore', `${info.restored} (safety: ${info.safetyBackup ?? 'none'})`);
+      return info;
     } catch (err) {
       return reply.code(errToStatus(err)).send({ error: err.message });
     }

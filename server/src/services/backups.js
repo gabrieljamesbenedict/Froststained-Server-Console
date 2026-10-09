@@ -57,7 +57,8 @@ export async function createBackup({ serverPath, backupDir, mc, rcon }) {
     const name = backupFileName();
     const full = path.join(backupDir, name);
     const zip = new AdmZip();
-    zip.addLocalFolder(world, readLevelName(serverPath));
+    // World contents at zip root so restore extracts straight into the world dir.
+    zip.addLocalFolder(world);
     zip.writeZip(full);
     const { size } = fs.statSync(full);
     return { file: name, sizeKb: Math.round(size / 1024), world: readLevelName(serverPath), live: running };
@@ -72,8 +73,7 @@ export async function createBackup({ serverPath, backupDir, mc, rcon }) {
   }
 }
 
-export function listBackups(backupDir) {
-  if (!fs.existsSync(backupDir)) return { dir: backupDir, count: 0, backups: [] };
+export function listBackups(backupDir) {  if (!fs.existsSync(backupDir)) return { dir: backupDir, count: 0, backups: [] };
   const backups = fs
     .readdirSync(backupDir)
     .filter((f) => f.endsWith('.zip'))
@@ -85,8 +85,7 @@ export function listBackups(backupDir) {
   return { dir: backupDir, count: backups.length, backups };
 }
 
-export function resolveBackupFile(backupDir, file) {
-  const base = path.basename(file ?? '');
+export function resolveBackupFile(backupDir, file) {  const base = path.basename(file ?? '');
   if (!base.endsWith('.zip')) {
     const err = new Error('backup file must end with .zip');
     err.code = 'BAD_FILE';
@@ -99,4 +98,27 @@ export function resolveBackupFile(backupDir, file) {
     throw err;
   }
   return { base, full };
+}
+
+// Restore overwrites the world, so it requires a stopped server and takes a
+// safety snapshot of the current world first (skipped if no world exists).
+export async function restoreBackup({ serverPath, backupDir, mc, file }) {
+  if (mc.status().state !== 'stopped') {
+    const err = new Error('stop the server before restoring a backup');
+    err.code = 'STILL_RUNNING';
+    throw err;
+  }
+  const { base, full } = resolveBackupFile(backupDir, file);
+  const world = worldDir(serverPath);
+  let safetyBackup = null;
+  if (fs.existsSync(world)) {
+    safetyBackup = `pre-restore-${backupFileName().slice('backup-'.length)}`;
+    const zip = new AdmZip();
+    zip.addLocalFolder(world);
+    zip.writeZip(path.join(backupDir, safetyBackup));
+  }
+  fs.rmSync(world, { recursive: true, force: true });
+  fs.mkdirSync(world, { recursive: true });
+  new AdmZip(full).extractAllTo(world, true);
+  return { restored: base, safetyBackup, world: readLevelName(serverPath) };
 }
