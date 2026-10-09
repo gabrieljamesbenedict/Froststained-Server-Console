@@ -233,6 +233,91 @@ function Dashboard() {
   );
 }
 
+function Players() {
+  const [players, setPlayers] = useState({ count: 0, players: [], rconConfigured: false });
+  const [rcon, setRcon] = useState(null);
+  const [name, setName] = useState('');
+  const [action, setAction] = useState('kick');
+  const [reason, setReason] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [result, setResult] = useState('');
+
+  const refresh = async () => {
+    try {
+      setPlayers(await api('/api/players'));
+      setRcon(await api('/api/rcon/status'));
+      setError('');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+    const t = setInterval(refresh, 10000);
+    return () => clearInterval(t);
+  }, []);
+
+  const act = async (route, body) => {
+    setError('');
+    setResult('');
+    try {
+      const r = await api(`/api/players/${route}`, { method: 'POST', body: JSON.stringify(body) });
+      setResult(r.response || 'ok');
+      refresh();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (name.trim()) act(action, { name: name.trim(), reason });
+  };
+
+  return (
+    <section>
+      <h2>Players ({players.count} online)</h2>
+      {rcon && !rcon.configured && (
+        <p>RCON not configured: set <code>rcon.password</code> and <code>enable-rcon=true</code> on the MC server.</p>
+      )}
+      {players.players.length > 0 && (
+        <ul>
+          {players.players.map((p) => (
+            <li key={p.name}>
+              {p.name} <button onClick={() => act('kick', { name: p.name, reason: 'Kicked by admin' })}>Kick</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <form onSubmit={submit} style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <input placeholder="Username" value={name} onChange={(e) => setName(e.target.value)} />
+        <select value={action} onChange={(e) => setAction(e.target.value)}>
+          {['kick', 'ban', 'pardon', 'op', 'deop', 'whitelist-add', 'whitelist-remove'].map((a) => (
+            <option key={a} value={a}>{a}</option>
+          ))}
+        </select>
+        <input placeholder="Reason (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />
+        <button type="submit">Run</button>
+      </form>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (message.trim()) act('say', { message });
+          setMessage('');
+        }}
+        style={{ display: 'flex', gap: 8, marginTop: 8 }}
+      >
+        <input placeholder="Broadcast message" value={message} onChange={(e) => setMessage(e.target.value)} style={{ flex: 1 }} />
+        <button type="submit">Say</button>
+      </form>
+      {error && <p style={{ color: 'crimson' }}>{error}</p>}
+      {result && <p style={{ color: 'green' }}>{result}</p>}
+    </section>
+  );
+}
+
 export default function App() {
   const [state, setState] = useState({ loading: true, needsSetup: false, user: null });
 
@@ -269,6 +354,7 @@ export default function App() {
             <button onClick={logout}>Sign out</button>
           </p>
           <Console />
+          <Players />
           <Dashboard />
         </>
       ) : (
