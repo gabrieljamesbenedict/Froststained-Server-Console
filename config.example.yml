@@ -7,6 +7,9 @@ host: "0.0.0.0"
 # Example Linux: "/home/user/mc-survival"
 server_path: "./mc-server"
 
+# Minecraft version of the server (used for mod update checks).
+minecraft_version: null
+
 # How the console launches the server (cwd = server_path).
 # Vanilla default: java -jar server.jar nogui
 launch:

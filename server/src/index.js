@@ -9,6 +9,7 @@ import authRoutes, { COOKIE_NAME, getUserFromToken } from './routes/auth.js';
 import serverRoutes from './routes/server.js';
 import metricsRoutes from './routes/metrics.js';
 import playersRoutes from './routes/players.js';
+import modsRoutes from './routes/mods.js';
 import { attachConsoleWs } from './ws/console.js';
 import { loadConfig } from './config.js';
 import { openDb } from './db.js';
@@ -61,6 +62,7 @@ app.register(authRoutes);
 app.register(serverRoutes);
 app.register(metricsRoutes);
 app.register(playersRoutes);
+app.register(modsRoutes);
 attachConsoleWs(app);
 
 // TODO (later phases): mods, backups.
