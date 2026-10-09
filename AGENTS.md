@@ -29,9 +29,14 @@ instance (2 servers = 2 console copies on different ports via `--port/--config`)
     longer bodies (one `- ` line per change)
   - Example:
     `fix(web): bind dev server to all interfaces for IPv4 and LAN access`
+- Every change gets its own branch - no direct commits to `main`, no exceptions.
+  Name by type: `feature/<kebab-name>` (e.g. `feature/mc-process-manager`),
+  `fix/<kebab-name>`, `docs/<kebab-name>`, `chore/<kebab-name>`, `test/<kebab-name>`.
+- Push the branch to `origin` for backup. Merge into `main` (merge commit, so
+  history shows the unit of work) only after tests pass, push `main`, then
+  delete the branch.
 - Stage with `git add <paths>` (avoid blind `git add -A` once runtime files exist;
   `config.yml` and `data.db*` are gitignored and must never be committed)
-- After committing, push to `main` unless told otherwise
 - For multi-step requests: stage first, propose the commit message, wait for
   approval before committing
 
