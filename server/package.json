@@ -5,11 +5,15 @@
   "type": "module",
   "license": "GPL-3.0-or-later",
   "scripts": {
-    "dev": "node src/index.js --config ../config.example.yml",
+    "dev": "node src/index.js --config ../config.example.yml --data-file ../data/dev.db",
     "start": "node src/index.js"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.1.3",
+    "@fastify/static": "^10.1.6",
+    "bcryptjs": "^3.0.3",
     "fastify": "^5.0.0",
+    "js-yaml": "^5.4.3",
     "ws": "^8.18.0"
   }
 }

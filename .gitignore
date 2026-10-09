@@ -4,6 +4,7 @@ web/node_modules/
 server/node_modules/
 *.log
 data.db*
+dev.db*
 config.yml
 .env
 .DS_Store
