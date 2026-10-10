@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { api, wsUrl } from '../api.js';
+import { useEffect, useState } from 'react';
+import { api } from '../api.js';
 
 export function AuthForm({ mode, onDone }) {
   const [username, setUsername] = useState('');
@@ -32,105 +32,6 @@ export function AuthForm({ mode, onDone }) {
       {error && <p style={{ color: 'var(--stain)' }}>{error}</p>}
       <button type="submit">{mode === 'setup' ? 'Create + sign in' : 'Sign in'}</button>
     </form>
-  );
-}
-
-export function Console() {
-  const [status, setStatus] = useState({ state: 'unknown' });
-  const [lines, setLines] = useState([]);
-  const [command, setCommand] = useState('');
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  const logRef = useRef(null);
-
-  const pushLines = (next) =>
-    setLines((prev) => [...prev, ...next].slice(-500));
-
-  useEffect(() => {
-    let ws;
-    let alive = true;
-    let retry;
-    const connect = () => {
-      ws = new WebSocket(wsUrl());
-      ws.onmessage = (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.type === 'history') pushLines(msg.lines);
-        else if (msg.type === 'line') pushLines([{ t: msg.t, stream: msg.stream, line: msg.line }]);
-        else if (msg.type === 'status') setStatus(msg.status);
-      };
-      ws.onclose = () => {
-        if (alive) retry = setTimeout(connect, 3000);
-      };
-    };
-    connect();
-    const poll = setInterval(async () => {
-      try {
-        setStatus(await api('/api/server/status'));
-      } catch {
-        /* ws status messages cover disconnects */
-      }
-    }, 5000);
-    return () => {
-      alive = false;
-      clearTimeout(retry);
-      clearInterval(poll);
-      ws?.close();
-    };
-  }, []);
-
-  useEffect(() => {
-    logRef.current?.scrollTo(0, logRef.current.scrollHeight);
-  }, [lines]);
-
-  const action = async (name, body) => {
-    setError('');
-    setNotice('');
-    try {
-      const s = await api(`/api/server/${name}`, body ? { method: 'POST', body: JSON.stringify(body) } : { method: 'POST' });
-      if (s.state) setStatus(s);
-      if (s.stopResult && s.stopResult !== 'graceful') setNotice(`${name}: ${s.stopResult} (not a clean shutdown)`);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const sendCommand = (e) => {
-    e.preventDefault();
-    if (command.trim()) action('command', { command });
-    setCommand('');
-  };
-
-  return (
-    <section>
-      <h2>Server</h2>
-      <p>
-        State: <strong>{status.state}</strong>
-        {status.pid ? ` (pid ${status.pid})` : ''}
-        {status.lastExit ? ` - last exit: ${JSON.stringify(status.lastExit)}` : ''}
-      </p>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={() => action('start')}>Start</button>
-        <button onClick={() => action('stop')}>Stop</button>
-        <button onClick={() => action('restart')}>Restart</button>
-        <button onClick={() => action('kill')}>Kill</button>
-      </div>
-      {error && <p style={{ color: 'var(--stain)' }}>{error}</p>}
-      {notice && <p style={{ color: 'var(--warn)' }}>{notice}</p>}
-      <form onSubmit={sendCommand} style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-        <input
-          placeholder="Console command (e.g. list)"
-          value={command}
-          onChange={(e) => setCommand(e.target.value)}
-          style={{ flex: 1 }}
-        />
-        <button type="submit">Send</button>
-      </form>
-      <pre ref={logRef} className="term" style={{ height: 320 }}>
-        {lines.map((l, i) => (
-          <div key={i}>{l.line}</div>
-        ))}
-      </pre>
-    </section>
   );
 }
 
