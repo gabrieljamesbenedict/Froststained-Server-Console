@@ -20,7 +20,7 @@ function usePoll(fn, ms, deps = []) {
   }, deps);
 }
 
-export function ServerControl({ onChange }) {
+function ServerControl({ onChange }) {
   const [, setStatus] = useState({ state: 'unknown' });
 
   usePoll(async (alive) => {
@@ -31,9 +31,9 @@ export function ServerControl({ onChange }) {
     }
   }, POLL.fast);
 
-  const action = async (name, body) => {
+  const action = async (name) => {
     try {
-      const s = await api(`/api/server/${name}`, body ? { method: 'POST', body } : { method: 'POST' });
+      const s = await api(`/api/server/${name}`, { method: 'POST' });
       if (s.state) setStatus(s);
       if (s.stopResult && s.stopResult !== 'graceful') {
         toast(`${name}: ${s.stopResult}`, 'not a clean shutdown', 'err');

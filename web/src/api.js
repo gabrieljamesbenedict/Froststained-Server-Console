@@ -26,7 +26,6 @@ export const POLL = {
   fast: 5000, // metrics, log tail, server status
   status: 10000, // sidebar power, online players
   activity: 15000, // audit feed
-  slow: 30000, // schedule, backups
   world: 60000, // world size
 };
 
@@ -36,16 +35,11 @@ export const LIMITS = {
   netSamples: 60,
   auditFeed: 15,
   logTail: 30,
-  modSearch: 10,
-  modCheckConcurrency: 4,
-  updateSummary: 3,
   feedTruncate: 80,
-  searchTruncate: 100,
 };
 
 export const STORE_KEYS = {
   theme: 'frost-theme',
-  modUpdates: 'frost-mod-updates',
 };
 
 export const TOAST_MS = 4000;
@@ -131,7 +125,6 @@ export function humanizeActivity(a) {
       const m = a.action.match(/^player\.(.+)$/);
       if (m) {
         const parts = d.split(' ').filter(Boolean);
-        if (m[1] === 'say') return `${who} broadcast "${parts.slice(1).join(' ').slice(0, LIMITS.feedTruncate)}"`;
         if (m[1] === 'whitelist-add') return `${who} whitelisted ${parts[parts.length - 1]}`;
         if (m[1] === 'whitelist-remove') return `${who} removed ${parts[parts.length - 1]} from the whitelist`;
         const verb = PLAYER_VERBS[m[1]];
