@@ -237,12 +237,12 @@
         <button class="primary" id="tabon" onclick="ptab('on')">Online · 2</button>
         <button id="taball" onclick="ptab('all')">All · 5</button>
       </div>
-      <table style="table-layout:fixed"><colgroup><col style="width:34%" /><col style="width:20%" /><col style="width:15%" /><col style="width:12%" /><col /></colgroup><thead><tr><th>Player</th><th>Online for</th><th>Playtime</th><th>Deaths</th><th></th></tr></thead>
+      <table style="table-layout:fixed"><colgroup><col style="width:15%" /><col style="width:15%" /><col style="width:15%" /><col style="width:15%" /><col style="width:15%" /><col /></colgroup><thead><tr><th>Player</th><th>Online for</th><th>Playtime</th><th>Deaths</th><th>UUID</th><th></th></tr></thead>
       <tbody id="prows">
-        <tr data-p="Porado" onclick="pdetail('Porado', '1h22m', '36h', '12', true, false)"><td>Porado (Op)</td><td>1h22m</td><td>36h</td><td>12</td>
-          <td style="position:relative"><button class="pmenu" data-p="Porado" style="width:100%">⋯</button></td></tr>
-        <tr data-p="Steve" onclick="pdetail('Steve', '14m', '9h', '3', false, true)"><td>Steve</td><td>14m</td><td>9h</td><td>3</td>
-          <td style="position:relative"><button class="pmenu" data-p="Steve" style="width:100%">⋯</button></td></tr>
+        <tr data-p="Porado" onclick="pdetail('Porado', '1h22m', '36h', '12', true, false)"><td>Porado (Op)</td><td>1h22m</td><td>36h</td><td>12</td><td class="num">8f3a…c91d</td>
+          <td align="right" style="position:relative"><button class="pmenu" data-p="Porado">⋯</button></td></tr>
+        <tr data-p="Steve" onclick="pdetail('Steve', '14m', '9h', '3', false, true)"><td>Steve</td><td>14m</td><td>9h</td><td>3</td><td class="num">b71e…04aa</td>
+          <td align="right" style="position:relative"><button class="pmenu" data-p="Steve">⋯</button></td></tr>
       </tbody></table>
       <div class="menu" id="pctx">
         <button>Kick</button><button>Ban</button><button>Pardon</button>
@@ -439,12 +439,12 @@ motd=Welcome to Froststained\!</textarea>
     toast(b.textContent + ' ' + menuFor, 'RCON confirmed', 'ok'));
   const onRows = document.getElementById('prows').innerHTML;
   const allRows = onRows
-    + `<tr><td>Alex</td><td>last seen 2d ago</td><td>51h</td><td>22</td>`
-    + `<td style="position:relative"><button class="pmenu" data-p="Alex" style="width:100%">⋯</button></td></tr>`
-    + `<tr><td>Herobrine</td><td>last seen 9d ago</td><td>3h</td><td>7</td>`
-    + `<td style="position:relative"><button class="pmenu" data-p="Herobrine" style="width:100%">⋯</button></td></tr>`
-    + `<tr><td>Notch</td><td>last seen 30d ago</td><td>12h</td><td>1</td>`
-    + `<td style="position:relative"><button class="pmenu" data-p="Notch" style="width:100%">⋯</button></td></tr>`;
+    + `<tr><td>Alex</td><td>last seen 2d ago</td><td>51h</td><td>22</td><td class="num">c44d…9e02</td>`
+    + `<td align="right" style="position:relative"><button class="pmenu" data-p="Alex">⋯</button></td></tr>`
+    + `<tr><td>Herobrine</td><td>last seen 9d ago</td><td>3h</td><td>7</td><td class="num">41f8…77b0</td>`
+    + `<td align="right" style="position:relative"><button class="pmenu" data-p="Herobrine">⋯</button></td></tr>`
+    + `<tr><td>Notch</td><td>last seen 30d ago</td><td>12h</td><td>1</td><td class="num">069a…5faa</td>`
+    + `<td align="right" style="position:relative"><button class="pmenu" data-p="Notch">⋯</button></td></tr>`;
   function ptab(which) {
     document.getElementById('prows').innerHTML = which === 'all' ? allRows : onRows;
     document.getElementById('tabon').className = which === 'all' ? '' : 'primary';
