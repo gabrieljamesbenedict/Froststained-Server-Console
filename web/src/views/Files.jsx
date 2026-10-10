@@ -183,7 +183,12 @@ export default function Files() {
             <div className="row">
               <button className="primary" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
               <button onClick={() => setEditing(null)}>Close</button>
-              <span className="muted">Text files under 1 MB. Original kept as .bak.</span>
+              <span className="muted">
+                Text files under {(() => {
+                  const cap = editing.maxBytes ?? 1048576;
+                  return cap >= 1048576 ? `${cap / 1048576} MB` : `${Math.round(cap / 1024)} KB`;
+                })()}. Original kept as .bak.
+              </span>
             </div>
           </div>
         </div>
