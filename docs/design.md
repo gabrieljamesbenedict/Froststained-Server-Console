@@ -28,7 +28,8 @@ Red accents carry the "stained" half of the identity:
 - No persistent status frame; state lives on the Dashboard.
 - No bullets/triangles on nav labels; active item gets an accent left bar.
 - Content flex-fills the width (1600px ceiling); no narrow centered column.
-- Dashboard is CSS grid: alerts strip, stat cards, console tail, activity feed.
+- Dashboard is CSS grid: control + server cards left, activity feed spanning
+  both rows right, console tail full-width below.
 - Console is full-page: toolbar (follow, level filter, download, clear),
   full-height terminal, command bar with history.
 - Mods take PrismLauncher cues: dense rows, inline enable checkbox, version
