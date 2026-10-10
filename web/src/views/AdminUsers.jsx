@@ -120,7 +120,7 @@ export default function AdminUsers({ currentUserId }) {
     <div className="card fill">
       <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <h3>Admin Users</h3>
-        <button onClick={() => setModal({ type: 'create' })}>+ Add user</button>
+        <button onClick={() => setModal({ type: 'create' })}>Add user</button>
       </div>
       {error && <p style={{ color: 'var(--stain)' }}>{error}</p>}
       <div className="scroll">
@@ -149,7 +149,7 @@ export default function AdminUsers({ currentUserId }) {
                 <td>
                   <span className={`pill ${user.role === 'admin' ? '' : 'viewer'}`}>{user.role}</span>
                 </td>
-                <td className="num">{new Date(user.created_at).toLocaleString()}</td>
+                <td>{new Date(user.created_at).toLocaleString()}</td>
                 <td align="right" style={{ position: 'relative' }}>
                   <button onClick={(e) => openMenu(e, user)}>⋯</button>
                 </td>
