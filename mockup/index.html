@@ -98,8 +98,9 @@
   .view { display: none; } .view.active { display: block; }
   #v-console.active { display: flex; flex-direction: column; flex: 1; }
   #v-mods.active, #v-players.active { display: flex; flex-direction: column; flex: 1; height: calc(100vh - 130px); }
-  #v-mods .card.fill, #v-players .card.fill { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  #v-mods .card.fill, #v-players .card.fill { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
   #v-mods .scroll, #v-players .scroll { flex: 1; overflow-y: auto; min-height: 0; }
+  #v-mods .rail > .side { overflow-y: auto; min-height: 0; }
   #v-console .card.fill { display: flex; flex-direction: column; flex: 1; }
   #logfull { flex: 1; min-height: 300px; }
   .cmdrow { align-items: stretch; }
@@ -239,7 +240,7 @@
     <div class="card fill"><h3>Players</h3>
       <div class="row" style="margin:0 0 8px 0">
         <button class="primary" id="tabon" onclick="ptab('on')">Online · 2</button>
-        <button id="taball" onclick="ptab('all')">All · 5</button>
+        <button id="taball" onclick="ptab('all')">All · 20</button>
       </div>
       <div class="scroll"><table style="table-layout:fixed"><colgroup><col style="width:30%" /><col style="width:18%" /><col style="width:14%" /><col style="width:12%" /><col /></colgroup><thead><tr><th>Player</th><th>Online for</th><th>Playtime</th><th>Deaths</th><th align="right"></th></tr></thead>
       <tbody id="prows"></tbody></table></div>
@@ -462,13 +463,27 @@ motd=Welcome to Froststained\!</textarea>
   const onRows =
     row('Porado', '8f3a…c91d', '1h22m', '36h', '12') +
     row('Steve', 'b71e…04aa', '14m', '9h', '3');
-  const allRows = onRows +
-    row('Alex', 'c44d…9e02', 'last seen 2d ago', '51h', '22') +
-    row('Herobrine', '41f8…77b0', 'last seen 9d ago', '3h', '7') +
-    row('Notch', '069a…5faa', 'last seen 30d ago', '12h', '1') +
-    row('Alex', 'c44d…9e02', 'last seen 2d ago', '51h', '22') +
-    row('Herobrine', '41f8…77b0', 'last seen 9d ago', '3h', '7') +
-    row('Notch', '069a…5faa', 'last seen 30d ago', '12h', '1');
+  const extras = [
+    ['Alex', 'c44d…9e02', 'last seen 2d ago', '51h', '22'],
+    ['Herobrine', '41f8…77b0', 'last seen 9d ago', '3h', '7'],
+    ['Notch', '069a…5faa', 'last seen 30d ago', '12h', '1'],
+    ['Dream', 'd51e…7a33', 'last seen 1d ago', '88h', '31'],
+    ['George', 'a02f…11bc', 'last seen 4d ago', '64h', '19'],
+    ['Sapnap', '77c1…e5d0', 'last seen 5d ago', '72h', '25'],
+    ['Tommy', '9b2a…f04c', 'last seen 6d ago', '45h', '40'],
+    ['Tubbo', '3e8d…b712', 'last seen 7d ago', '58h', '17'],
+    ['Ranboo', 'f1c9…28ab', 'last seen 8d ago', '61h', '29'],
+    ['Philza', '04de…93f1', 'last seen 12d ago', '120h', '15'],
+    ['Wilbur', 'b83a…c4e6', 'last seen 15d ago', '95h', '33'],
+    ['Technoblade', 'e57a…6b19', 'last seen 40d ago', '200h', '50'],
+    ['Skeppy', '1c55…d2aa', 'last seen 3d ago', '28h', '11'],
+    ['BadBoyHalo', '6d07…8c3f', 'last seen 11d ago', '77h', '26'],
+    ['Callahan', 'aa19…0e84', 'last seen 20d ago', '15h', '5'],
+    ['Ponk', '5f2b…71d3', 'last seen 25d ago', '33h', '14'],
+    ['HBomb', '8e6c…42a9', 'last seen 18d ago', '41h', '9'],
+    ['Antfrost', '2d91…f5c7', 'last seen 22d ago', '37h', '21'],
+  ];
+  const allRows = onRows + extras.map(([n, u, s, p, d]) => row(n, u, s, p, d)).join('');
   document.getElementById('prows').innerHTML = onRows;
   bindMenus();
   function ptab(which) {
