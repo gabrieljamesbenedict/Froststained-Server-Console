@@ -113,3 +113,19 @@ export function renameEntry(serverPath, from, to) {
   fs.renameSync(src.full, dst.full);
   return { from: src.rel, to: dst.rel };
 }
+
+export function deleteEntry(serverPath, rel) {
+  const { rel: clean, full } = resolveServerPath(serverPath, rel);
+  if (!clean) throw bad('cannot delete the server root');
+  let stat;
+  try {
+    stat = fs.statSync(full);
+  } catch {
+    const err = new Error(`not found: ${clean}`);
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  if (stat.isDirectory()) fs.rmSync(full, { recursive: true, force: true });
+  else fs.rmSync(full);
+  return { deleted: clean, dir: stat.isDirectory() };
+}

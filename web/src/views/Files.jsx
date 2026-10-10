@@ -8,7 +8,7 @@ function formatSize(e) {
   return `${Math.round((e.sizeB / 1048576) * 10) / 10} MB`;
 }
 
-export default function Files() {
+export default function Files({ user }) {
   const [path, setPath] = useState('');
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -18,6 +18,7 @@ export default function Files() {
   const [saving, setSaving] = useState(false);
   const menuRef = useRef(null);
   const fileRef = useRef(null);
+  const isAdmin = user?.role === 'admin';
 
   const refresh = async (p = path) => {
     try {
@@ -91,6 +92,18 @@ export default function Files() {
       refresh();
     } catch (err) {
       toast('Rename failed', err.message, 'err');
+    }
+  };
+
+  const remove = async (entry) => {
+    setMenu(null);
+    if (!window.confirm(`Delete ${entry.name}? This cannot be undone.`)) return;
+    try {
+      await api(`/api/files/entry?path=${encodeURIComponent(entry.path)}`, { method: 'DELETE' });
+      toast('Deleted', entry.name, 'ok');
+      refresh();
+    } catch (err) {
+      toast('Delete failed', err.message, 'err');
     }
   };
 
@@ -169,12 +182,13 @@ export default function Files() {
           <div className="menu open" ref={menuRef} style={{ top: menu.top, left: menu.left }}>
             <button onClick={() => openEntry(menu.entry)}>Open</button>
             {!menu.entry.dir && <button onClick={() => download(menu.entry)}>Download</button>}
-            <button onClick={() => rename(menu.entry)}>Rename</button>
+            {isAdmin && <button onClick={() => rename(menu.entry)}>Rename</button>}
+            {isAdmin && <button className="danger" onClick={() => remove(menu.entry)}>Delete</button>}
           </div>
         )}
       </div>
       {editing && (
-        <div className="modalback open" onClick={(e) => { if (e.target === e.currentTarget) setEditing(null); }}>
+        <div className="modalback" onClick={(e) => { if (e.target === e.currentTarget) setEditing(null); }}>
           <div className="card modal">
             <h3>{editing.path}</h3>
             <textarea className="code" spellCheck="false" value={draft} onChange={(e) => setDraft(e.target.value)} />

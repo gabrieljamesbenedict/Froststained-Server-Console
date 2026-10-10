@@ -246,7 +246,7 @@ export default function App() {
     metrics: <Metrics />,
     players: <Players />,
     mods: <Mods />,
-    files: <Files />,
+    files: <Files user={state.user} />,
     backups: <Backups />,
     settings: <SettingsView theme={theme} setTheme={setTheme} user={state.user} />,
     account: <AccountView user={state.user} onLogout={logout} />,
