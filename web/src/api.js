@@ -134,3 +134,18 @@ export function humanizeActivity(a) {
     }
   }
 }
+
+export const adminUsersApi = {
+  list() {
+    return api('/api/admin/users');
+  },
+  create({ username, password, role }) {
+    return api('/api/admin/users', { method: 'POST', body: { username, password, role } });
+  },
+  update(id, { password, role }) {
+    return api(`/api/admin/users/${id}`, { method: 'PATCH', body: { password, role } });
+  },
+  remove(id) {
+    return api(`/api/admin/users/${id}`, { method: 'DELETE' });
+  },
+};
