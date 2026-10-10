@@ -124,6 +124,21 @@ export default async function authRoutes(app) {
 
   app.get('/api/auth/me', { preHandler: app.requireAuth }, async (req) => req.user);
 
+  // Session info for the Account tab. Token hashes stay server-side; the
+  // current session is flagged so sign-out makes sense.
+  app.get('/api/auth/sessions', { preHandler: app.requireAuth }, async (req) => {
+    const current = crypto.createHash('sha256').update(req.cookies[COOKIE_NAME]).digest('hex');
+    const sessions = db
+      .prepare('SELECT token_hash, created_at, expires_at FROM sessions WHERE user_id = ? ORDER BY created_at DESC')
+      .all(req.user.id)
+      .map((s) => ({
+        createdAt: s.created_at,
+        expiresAt: s.expires_at,
+        current: s.token_hash === current,
+      }));
+    return { count: sessions.length, sessions };
+  });
+
   app.post('/api/auth/password', { preHandler: app.requireAuth }, async (req, reply) => {
     const { currentPassword, newPassword } = req.body ?? {};
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);

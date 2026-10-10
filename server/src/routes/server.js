@@ -1,5 +1,6 @@
 import { audit } from '../db.js';
 import { readLogTail } from '../services/logTail.js';
+import { serverInfo } from '../services/serverInfo.js';
 import { worldInfo } from '../services/worldInfo.js';
 
 function errToStatus(err) {
@@ -24,6 +25,12 @@ export default async function serverRoutes(app) {
     } catch (err) {
       return reply.code(errToStatus(err)).send({ error: err.message });
     }
+  });
+
+  app.get('/api/server/info', { preHandler: app.requireAuth }, async () => {
+    const info = serverInfo({ config: app.config, rcon: app.rcon });
+    info.rcon.reachable = info.rcon.configured ? await app.rcon.reachable() : false;
+    return info;
   });
 
   app.post('/api/server/start', { preHandler: app.requireAuth }, async (req, reply) => {
