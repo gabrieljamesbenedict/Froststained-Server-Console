@@ -23,18 +23,19 @@ Red accents carry the "stained" half of the identity:
 
 ## Layout and nav
 
-- Sidebar order: Dashboard, Server files, Metrics, Players, Mods, Backups, Settings.
+- Sidebar order: Dashboard, Console, Metrics, Players, Mods, Files,
+  Backups, Settings — with Account pinned at the very bottom.
+- No persistent status frame; state lives on the Dashboard.
 - No bullets/triangles on nav labels; active item gets an accent left bar.
 - Content flex-fills the width (1600px ceiling); no narrow centered column.
-- Dashboard is the hub: Server control card on top (status + power buttons),
-  host CPU/memory/disk card, full server console, player list. No separate
-  Console page, no mods card on the dashboard.
-- Server files tab: breadcrumb browser plus an editor card for text files
-  (allowlist, size cap, backup on save, restart notice).
-- Metrics adds RAM and disk graphs next to CPU.
-- Players and mods use tables with right-aligned numerics and status dots.
-- Topbar: view title, status pill, user, theme toggle. Tables get sticky
-  headers, row hover, right-aligned numerics, status dots.
+- Dashboard is CSS grid: alerts strip, stat cards, console tail, activity feed.
+- Console is full-page: toolbar (follow, level filter, download, clear),
+  full-height terminal, command bar with history.
+- Mods take PrismLauncher cues: dense rows, inline enable checkbox, version
+  badges, right action column, inline update badges.
+- Files is strictly explorer plus viewer/editor.
+- Players and Backups share one table pattern.
+- Account tab holds sign-out, password change, and session info.
 
 ## Copy
 
