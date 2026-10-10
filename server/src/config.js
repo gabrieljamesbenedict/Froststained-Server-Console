@@ -26,7 +26,14 @@ function fail(msg) {
 }
 
 export function loadConfig(argv = process.argv) {
-  const configPath = flag(argv, '--config') ?? process.env.FROSTSTAINED_CONFIG ?? './config.yml';
+  // npm swallows --config when passed through `npm run` (it treats it as an
+  // npm cli config), so prefer an explicit path, then env, then a local
+  // config.yaml, falling back to config.yml. Plain `npm run start -w server`
+  // therefore picks up server/config.yaml with no extra flags.
+  const configPath =
+    flag(argv, '--config') ??
+    process.env.FROSTSTAINED_CONFIG ??
+    (fs.existsSync('./config.yaml') ? './config.yaml' : './config.yml');
 
   let file = {};
   if (fs.existsSync(configPath)) {
