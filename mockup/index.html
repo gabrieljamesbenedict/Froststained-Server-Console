@@ -232,12 +232,16 @@
   </section>
 
   <section class="view" id="v-players">
-    <div class="card"><h3>Players · 2 online</h3>
-      <table><thead><tr><th>Player</th><th>Online for</th><th></th></tr></thead>
-      <tbody>
-        <tr><td>Porado</td><td class="num">1h22m</td>
+    <div class="card"><h3>Players</h3>
+      <div class="row" style="margin:0 0 8px 0">
+        <button class="primary" id="tabon" onclick="ptab('on')">Online · 2</button>
+        <button id="taball" onclick="ptab('all')">All known · 5</button>
+      </div>
+      <table><thead><tr><th>Player</th><th>Online for</th><th class="num">Playtime</th><th class="num">Deaths</th><th></th></tr></thead>
+      <tbody id="prows">
+        <tr data-p="Porado" onclick="pdetail('Porado', '1h22m', '36h', '12', true, false)"><td>Porado <span class="badge">OP</span></td><td class="num">1h22m</td><td class="num">36h</td><td class="num">12</td>
           <td style="position:relative"><button class="pmenu" data-p="Porado">⋯</button></td></tr>
-        <tr><td>Steve</td><td class="num">14m</td>
+        <tr data-p="Steve" onclick="pdetail('Steve', '14m', '9h', '3', false, true)"><td>Steve <span class="badge">WL</span></td><td class="num">14m</td><td class="num">9h</td><td class="num">3</td>
           <td style="position:relative"><button class="pmenu" data-p="Steve">⋯</button></td></tr>
       </tbody></table>
       <div class="menu" id="pctx">
@@ -245,6 +249,7 @@
         <button>Op</button><button>Deop</button>
         <button>Whitelist add</button><button>Whitelist remove</button>
       </div>
+      <div id="pdrawer" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px"></div>
     </div>
   </section>
 
@@ -417,18 +422,43 @@ motd=Welcome to Froststained\!</textarea>
   }
   const menu = document.getElementById('pctx');
   let menuFor = '';
-  document.querySelectorAll('.pmenu').forEach(b => b.onclick = (e) => {
-    e.stopPropagation();
-    menuFor = b.dataset.p;
-    const r = b.getBoundingClientRect();
-    menu.style.top = (r.bottom + window.scrollY + 4) + 'px';
-    menu.style.left = (r.left + window.scrollX - 120) + 'px';
-    menu.classList.add('open');
-  });
+  function bindMenus() {
+    document.querySelectorAll('.pmenu').forEach(b => b.onclick = (e) => {
+      e.stopPropagation();
+      menuFor = b.dataset.p;
+      const r = b.getBoundingClientRect();
+      menu.style.top = (r.bottom + window.scrollY + 4) + 'px';
+      menu.style.left = (r.left + window.scrollX - 120) + 'px';
+      menu.classList.add('open');
+    });
+  }
+  bindMenus();
   document.addEventListener('click', () => closeMenu());
   function closeMenu() { menu.classList.remove('open'); }
   menu.querySelectorAll('button').forEach(b => b.onclick = () =>
     toast(b.textContent + ' ' + menuFor, 'RCON confirmed', 'ok'));
+  const onRows = document.getElementById('prows').innerHTML;
+  const allRows = onRows
+    + `<tr><td>Alex <span class="badge">WL</span></td><td class="num">last seen 2d ago</td><td class="num">51h</td><td class="num">22</td>`
+    + `<td style="position:relative"><button class="pmenu" data-p="Alex">⋯</button></td></tr>`
+    + `<tr><td>Herobrine</td><td class="num">last seen 9d ago</td><td class="num">3h</td><td class="num">7</td>`
+    + `<td style="position:relative"><button class="pmenu" data-p="Herobrine">⋯</button></td></tr>`
+    + `<tr><td>Notch <span class="badge">WL</span></td><td class="num">last seen 30d ago</td><td class="num">12h</td><td class="num">1</td>`
+    + `<td style="position:relative"><button class="pmenu" data-p="Notch">⋯</button></td></tr>`;
+  function ptab(which) {
+    document.getElementById('prows').innerHTML = which === 'all' ? allRows : onRows;
+    document.getElementById('tabon').className = which === 'all' ? '' : 'primary';
+    document.getElementById('taball').className = which === 'all' ? 'primary' : '';
+    bindMenus();
+    document.getElementById('pdrawer').style.display = 'none';
+  }
+  function pdetail(name, online, play, deaths, op, wl) {
+    const d = document.getElementById('pdrawer');
+    d.style.display = 'block';
+    d.innerHTML = `<b>${name}</b> <span class="muted">8f3a…c91d · first seen Aug 2 · last seen today</span><br/>`
+      + `<span class="muted">Playtime ${play} · Deaths ${deaths} · Advancements 34 · `
+      + `${op ? 'OP level 4' : 'not op'} · ${wl ? 'whitelisted' : 'not whitelisted'} · online ${online}</span>`;
+  }
   function openFile() { document.getElementById('filemodal').classList.add('open'); }
   function closeFile() { document.getElementById('filemodal').classList.remove('open'); }
 </script>
