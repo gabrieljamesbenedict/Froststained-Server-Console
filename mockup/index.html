@@ -21,15 +21,17 @@
     --logbg: #0b0f14;
   }
   * { box-sizing: border-box; }
+  html, body { height: 100vh; overflow: hidden; }
   body { margin: 0; background: var(--bg); color: var(--text);
     font: 13px/1.55 "Monaspace Xenon", ui-monospace, monospace;
-    display: flex; min-height: 100vh; }
+    display: flex; }
   h1, h2, h3 { font-family: "Monaspace Krypton", ui-monospace, monospace;
     letter-spacing: -.01em; }
   .num, td.num, th.num, code, .term, textarea { font-family: "Monaspace Neon", ui-monospace, monospace; }
   .num, td.num { font-variant-numeric: tabular-nums; }
   aside { width: 200px; background: var(--surface); border-right: 1px solid var(--border);
-    padding: 16px 0; display: flex; flex-direction: column; flex-shrink: 0; }
+    padding: 16px 0; display: flex; flex-direction: column; flex-shrink: 0;
+    height: 100vh; overflow-y: auto; }
   aside h1 { font-size: 15px; margin: 0 0 10px 16px; }
   aside h1 .frost { color: var(--accent); } aside h1 .stained { color: var(--stain); }
   #master { margin: 0 12px 12px; padding: 9px; font-weight: 700; border-radius: 8px; }
@@ -43,7 +45,8 @@
   aside button.nav:hover { color: var(--text); }
   aside button.acct { margin-top: auto; border-top: 1px solid var(--border); }
   aside .foot { font-size: 11px; color: var(--muted); padding: 8px 16px 0; }
-  main { flex: 1; padding: 20px 28px; max-width: 1600px; display: flex; flex-direction: column; }
+  main { flex: 1; padding: 20px 28px; max-width: 1600px; display: flex;
+    flex-direction: column; height: 100vh; overflow: hidden; min-width: 0; }
   header.top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
   header.top h2 { margin: 0; font-size: 20px; }
   .pill { font-size: 12px; border: 1px solid var(--border); border-radius: 999px;
@@ -69,7 +72,6 @@
   .term { background: var(--logbg); color: #e6edf3; border: 1px solid var(--border);
     border-radius: 8px; padding: 12px; overflow-y: auto;
     font-size: 12px; line-height: 1.6; white-space: pre-wrap; }
-  #logfull { height: calc(100vh - 360px); min-height: 300px; }
   #logtail { height: 220px; }
   .term .warn { color: var(--warn); } .term .rcon { color: var(--accent); }
   .term .join { color: var(--ok); }
@@ -95,15 +97,16 @@
   .icon { display: inline-block; width: 24px; height: 24px; border-radius: 4px;
     background: var(--border); vertical-align: middle; text-align: center;
     font-size: 12px; line-height: 24px; color: var(--muted); }
-  .view { display: none; } .view.active { display: block; }
+  .view { display: none; } .view.active { display: flex; flex-direction: column;
+    flex: 1; min-height: 0; overflow-y: auto; }
+  #v-console.active, #v-mods.active, #v-players.active { overflow: hidden; }
   #v-console.active { display: flex; flex-direction: column; flex: 1; }
-  #v-mods.active, #v-players.active { display: flex; flex-direction: column; flex: 1; height: calc(100vh - 130px); }
   #v-mods .card.fill, #v-players .card.fill { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
   #v-mods .scroll, #v-players .scroll { flex: 1 1 auto; overflow-y: scroll; min-height: 0; max-height: 100%; }
   #v-mods .rail { min-height: 0; }
   #v-mods .rail > .side { overflow-y: auto; min-height: 0; }
-  #v-console .card.fill { display: flex; flex-direction: column; flex: 1; }
-  #logfull { flex: 1; min-height: 300px; }
+  #v-console .card.fill { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  #logfull { flex: 1; min-height: 0; }
   .cmdrow { align-items: stretch; }
   .cmdrow input { flex: 1; }
   .muted { color: var(--muted); font-size: 12px; }
