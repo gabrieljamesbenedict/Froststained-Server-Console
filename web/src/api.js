@@ -80,7 +80,8 @@ export function humanizeActivity(a) {
       return `${who} deleted backup ${d}`;
     case 'mod.upload':
       return `${who} uploaded ${d.split(' ')[0]}`;
-    case 'mod.enable':
+    case 'mod.install':
+      return `${who} installed ${d.split(' ')[0]}`;    case 'mod.enable':
       return `${who} enabled ${d}`;
     case 'mod.disable':
       return `${who} disabled ${d}`;

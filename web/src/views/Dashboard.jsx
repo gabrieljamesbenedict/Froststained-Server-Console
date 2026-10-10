@@ -68,8 +68,14 @@ export default function Dashboard({ go }) {
   const [sched, setSched] = useState(null);
   const [backups, setBackups] = useState(null);
   const [world, setWorld] = useState(null);
-  // Filled by the Mods view (Phase 6) after an update check; null hides the alert.
-  const [modUpdates] = useState(null);
+  // Filled by the Mods view after an update check; null hides the alert.
+  const [modUpdates, setModUpdates] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('frost-mod-updates'));
+    } catch {
+      return null;
+    }
+  });
 
   usePoll(async (alive) => {
     const m = await api('/api/metrics');
@@ -83,7 +89,14 @@ export default function Dashboard({ go }) {
 
   usePoll(async (alive) => {
     const a = await api('/api/audit?limit=8');
-    if (alive) setActivity(a.entries);
+    if (alive) {
+      setActivity(a.entries);
+      try {
+        setModUpdates(JSON.parse(localStorage.getItem('frost-mod-updates')));
+      } catch {
+        // private mode: update alert just stays hidden
+      }
+    }
   }, 15000);
 
   usePoll(async (alive) => {
