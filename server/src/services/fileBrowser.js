@@ -39,11 +39,15 @@ export function listDir(serverPath, rel) {
   const entries = fs.readdirSync(full, { withFileTypes: true }).map((e) => {
     const f = path.join(full, e.name);
     let sizeKb = null;
+    let sizeB = null;
     let mtimeMs = 0;
     try {
       const st = fs.statSync(f);
       mtimeMs = Math.round(st.mtimeMs);
-      if (st.isFile()) sizeKb = Math.round(st.size / 1024);
+      if (st.isFile()) {
+        sizeB = st.size;
+        sizeKb = Math.round(st.size / 1024);
+      }
     } catch {
       // entry vanished mid-list; keep the name with unknown size
     }
@@ -52,6 +56,7 @@ export function listDir(serverPath, rel) {
       path: clean ? `${clean}/${e.name}` : e.name,
       dir: e.isDirectory(),
       sizeKb,
+      sizeB,
       mtimeMs,
     };
   });
