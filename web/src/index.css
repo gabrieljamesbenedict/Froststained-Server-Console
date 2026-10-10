@@ -35,6 +35,7 @@ aside h1 .stained, .stained { color: var(--stain); }
 #master { margin: 0 12px 12px; padding: 9px; font-weight: 700; border-radius: 8px; }
 #master.stop { background: var(--ok); border-color: var(--ok); color: #fff; }
 #master.start { background: var(--stain); border-color: var(--stain); color: #fff; }
+#master:disabled { opacity: .55; cursor: default; }
 aside button.nav { background: none; border: none; border-left: 3px solid transparent;
   color: var(--muted); text-align: left; padding: 8px 10px 8px 13px;
   font: 500 13px "Monaspace Xenon", monospace; cursor: pointer; }
@@ -63,6 +64,7 @@ header.top h2 { margin: 0; font-size: 20px; }
 .stat b { font-size: 22px; display: block; }
 .stat span { font-size: 11px; color: var(--muted); text-transform: uppercase;
   letter-spacing: .06em; }
+.bigval { font-size: 30px; font-weight: 700; }
 .alert { border-left: 3px solid var(--warn); padding: 8px 12px; margin-bottom: 8px;
   background: var(--bg); border-radius: 0 6px 6px 0; font-size: 13px; }
 .alert.err { border-left-color: var(--stain); }
@@ -73,6 +75,9 @@ header.top h2 { margin: 0; font-size: 20px; }
 .term .warn { color: var(--warn); } .term .rcon { color: var(--accent); }
 .term .join { color: var(--ok); }
 .row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+.control-card { display: flex; flex-direction: column; }
+.control-card .row { flex: 1; align-items: stretch; }
+.control-card .row button { font-size: 14px; }
 button, .btn { background: var(--surface); color: var(--text);
   border: 1px solid var(--border); border-radius: 6px; padding: 7px 14px;
   font: 500 13px "Monaspace Xenon", monospace; cursor: pointer; }
@@ -87,11 +92,42 @@ table { width: 100%; border-collapse: collapse; font-size: 13px; }
 thead th { position: sticky; top: 0; font-size: 11px; text-transform: uppercase;
   letter-spacing: .06em; color: var(--muted); background: var(--surface); }
 th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+td.num, th.num { text-align: right; }
+tbody td:last-child { text-align: right; }
 tbody tr:hover { background: var(--border); }
 .view { display: none; }
 .view.active { display: flex; flex-direction: column; flex: 1; min-height: 0;
   overflow-y: auto; }
+.icon { display: inline-block; width: 24px; height: 24px; border-radius: 4px;
+  background: var(--border); vertical-align: middle; text-align: center;
+  font-size: 12px; line-height: 24px; color: var(--muted); }
+#v-console.active, #v-mods.active, #v-players.active { overflow: hidden; }
+#v-console.active { display: flex; flex-direction: column; flex: 1; }
+#v-mods .card.fill, #v-players .card.fill { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+#v-mods .scroll, #v-players .scroll { flex: 1 1 auto; overflow-y: scroll; min-height: 0; max-height: 100%; }
+#v-mods .rail { min-height: 0; }
+#v-mods .rail > .side { overflow-y: auto; min-height: 0; }
+#v-console .card.fill { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+#logtail { height: 220px; }
+#logfull { flex: 1; min-height: 0; }
+.cmdrow { align-items: stretch; }
+.cmdrow input { flex: 1; }
 .muted { color: var(--muted); font-size: 12px; }
+.crumb { font-size: 13px; margin-bottom: 8px; }
+.crumb a { color: var(--accent); text-decoration: none; }
+.menu { position: fixed; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px; display: none; z-index: 20; min-width: 150px; }
+.menu.open { display: block; }
+.menu button { display: block; width: 100%; border: none; text-align: left; background: none; }
+.menu button:hover { background: var(--border); }
+.modalback { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none;
+  align-items: center; justify-content: center; z-index: 30; }
+.modalback.open { display: flex; }
+.modal { width: min(760px, 92vw); max-height: 86vh; overflow-y: auto; }
+.rail { display: flex; gap: 16px; }
+.rail > .grow { flex: 1; min-width: 0; }
+.rail > .side { width: 190px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; }
+.search { width: 100%; margin-top: 8px; }
 #toasts { position: fixed; right: 16px; bottom: 16px; display: flex;
   flex-direction: column; gap: 8px; z-index: 40; }
 .toast { background: var(--surface); border: 1px solid var(--border);
@@ -105,4 +141,5 @@ tbody tr:hover { background: var(--border); }
   aside { width: 60px; }
   aside h1, aside .foot, aside button span, #master span { display: none; }
   aside button { text-align: center; }
+  .rail { flex-direction: column; } .rail > .side { width: 100%; }
 }

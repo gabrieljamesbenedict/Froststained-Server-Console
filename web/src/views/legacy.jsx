@@ -511,16 +511,23 @@ export function Backups() {
         </p>
       )}
       {error && <p style={{ color: 'var(--stain)' }}>{error}</p>}
-      <ul>
-        {data.backups.map((b) => (
-          <li key={b.file}>
-            {b.file} ({Math.round(b.sizeKb / 1024)} MB){' '}
-            <a href={`/api/backups/${encodeURIComponent(b.file)}/download`}>Download</a>{' '}
-            <button onClick={() => restore(b.file)}>Restore</button>{' '}
-            <button onClick={() => remove(b.file)}>Delete</button>
-          </li>
-        ))}
-      </ul>
+      <table>
+        <thead><tr><th>File</th><th>Size</th><th>Created</th><th></th></tr></thead>
+        <tbody>
+          {data.backups.map((b) => (
+            <tr key={b.file}>
+              <td>{b.file}</td>
+              <td>{Math.round(b.sizeKb / 1024)} MB</td>
+              <td>{new Date(b.createdAt).toLocaleString()}</td>
+              <td align="right">
+                <a href={`/api/backups/${encodeURIComponent(b.file)}/download`}>Download</a>{' '}
+                <button onClick={() => restore(b.file)}>Restore</button>{' '}
+                <button className="danger" onClick={() => remove(b.file)}>Delete</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </section>
   );
 }
@@ -552,7 +559,7 @@ export function PasswordForm() {
       <input placeholder="Current password" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" />
       <input placeholder="New password (8+ chars)" type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" />
       <input placeholder="Confirm new" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
-      <button type="submit">Change password</button>
+      <button type="submit" className="primary">Change password</button>
       {msg && <span style={{ fontSize: 12 }}>{msg}</span>}
     </form>
   );

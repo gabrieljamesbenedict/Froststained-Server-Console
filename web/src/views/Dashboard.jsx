@@ -48,7 +48,7 @@ export function ServerControl({ onChange }) {
   };
 
   return (
-    <div className="card span6">
+    <div className="card span6 control-card">
       <h3>Server control</h3>
       <div className="row" style={{ marginTop: 0 }}>
         <button className="primary" style={{ flex: 1 }} onClick={() => action('start')}>Start server</button>
@@ -120,7 +120,7 @@ export default function Dashboard({ go }) {
       </div>
       <div className="card span12">
         <h3>Live tail</h3>
-        <div className="term" style={{ height: 220 }}>
+        <div className="term" id="logtail">
           {tail.map((l, i) => (
             <div key={i}>{l.line}</div>
           ))}
