@@ -1,0 +1,249 @@
+<!doctype html>
+<!-- Froststained Server Console - static UI concept. Open straight from disk. -->
+<!-- Fake data, no backend. Real palette + layout for review. -->
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Froststained Server Console - Concept</title>
+<style>
+  :root, [data-theme="dark"] {
+    --bg: #0b0f14; --surface: #131a22; --border: #232d38;
+    --text: #e6edf3; --muted: #8b98a5; --accent: #58a6ff;
+    --ok: #3fb950; --warn: #d29922; --danger: #f85149;
+    --logbg: #0b0f14; --card-shadow: none;
+  }
+  [data-theme="light"] {
+    --bg: #f6f8fa; --surface: #ffffff; --border: #d0d7de;
+    --text: #1f2328; --muted: #57606a; --accent: #0969da;
+    --ok: #1a7f37; --warn: #9a6700; --danger: #cf222e;
+    --logbg: #0b0f14; --card-shadow: 0 1px 2px rgba(0,0,0,.06);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 system-ui, sans-serif; display: flex; min-height: 100vh; }
+  aside { width: 200px; background: var(--surface); border-right: 1px solid var(--border);
+    padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+  aside h1 { font-size: 16px; margin: 0 0 12px 4px; }
+  aside h1 span { color: var(--accent); }
+  aside button { background: none; border: none; color: var(--muted); text-align: left;
+    padding: 8px 10px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+  aside button.active, aside button:hover { background: var(--border); color: var(--text); }
+  aside .foot { margin-top: auto; font-size: 12px; color: var(--muted); padding: 0 4px; }
+  main { flex: 1; padding: 20px 24px; max-width: 980px; }
+  header.top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  header.top h2 { margin: 0; font-size: 20px; }
+  .pill { font-size: 12px; border: 1px solid var(--border); border-radius: 999px;
+    padding: 2px 10px; color: var(--muted); }
+  .pill.on { color: var(--ok); border-color: var(--ok); }
+  .spacer { flex: 1; }
+  .card { background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: var(--card-shadow); }
+  .statrow { display: flex; gap: 12px; flex-wrap: wrap; }
+  .stat { flex: 1; min-width: 140px; }
+  .stat b { font-size: 22px; display: block; }
+  .stat span { font-size: 12px; color: var(--muted); }
+  #log { background: var(--logbg); color: #e6edf3; border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; height: 320px; overflow-y: auto;
+    font: 12px/1.6 ui-monospace, monospace; white-space: pre-wrap; }
+  #log .warn { color: var(--warn); } #log .err { color: var(--danger); }
+  #log .rcon { color: var(--accent); } #log .join { color: var(--ok); }
+  .row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  button, .btn { background: var(--surface); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.danger { color: var(--danger); border-color: var(--danger); }
+  input, select { background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 10px; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  td.num, th.num { text-align: right; }
+  .view { display: none; } .view.active { display: block; }
+  #toasts { position: fixed; right: 16px; bottom: 16px; display: flex;
+    flex-direction: column; gap: 8px; }
+  .toast { background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent); border-radius: 6px; padding: 10px 14px;
+    font-size: 13px; box-shadow: var(--card-shadow); }
+  .toast.ok { border-left-color: var(--ok); } .toast.err { border-left-color: var(--danger); }
+  @media (max-width: 700px) {
+    aside { width: 56px; } aside h1, aside .foot, aside button span { display: none; }
+    aside button { text-align: center; }
+  }
+</style>
+</head>
+<body>
+<aside>
+  <h1><span>❄</span> <span class="lbl">FROSTSTAINED</span></h1>
+  <button data-v="console" class="active">▸ <span>Console</span></button>
+  <button data-v="players">▸ <span>Players</span></button>
+  <button data-v="mods">▸ <span>Mods</span></button>
+  <button data-v="backups">▸ <span>Backups</span></button>
+  <button data-v="metrics">▸ <span>Metrics</span></button>
+  <button data-v="settings">▸ <span>Settings</span></button>
+  <div class="foot">v0.1 · :3100</div>
+</aside>
+<main>
+  <header class="top">
+    <h2 id="title">Console</h2>
+    <span class="pill on" id="statepill">● Running · pid 24240 · up 2h14m</span>
+    <span class="spacer"></span>
+    <span class="pill">admin</span>
+    <button id="theme">☾ theme</button>
+  </header>
+
+  <section class="view active" id="v-console">
+    <div class="card"><div id="log"></div>
+      <div class="row">
+        <button class="primary" onclick="power('start')">Start</button>
+        <button onclick="power('stop')">Stop</button>
+        <button onclick="power('restart')">Restart</button>
+        <button class="danger" onclick="power('kill')">Kill</button>
+      </div>
+      <form class="row" onsubmit="return sendCmd(event)">
+        <input id="cmd" placeholder="command… (try: list)" style="flex:1" autocomplete="off" />
+        <button class="primary" type="submit">Send</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="view" id="v-players">
+    <div class="card">
+      <h3 style="margin-top:0">Online (2)</h3>
+      <ul id="plist"><li>Porado <button onclick="toast('Kicked Porado','ok')">Kick</button></li>
+      <li>Steve <button onclick="toast('Kicked Steve','ok')">Kick</button></li></ul>
+      <div class="row">
+        <input placeholder="Username" id="pname" />
+        <select id="pact"><option>kick</option><option>ban</option><option>pardon</option>
+        <option>op</option><option>deop</option><option>whitelist-add</option><option>whitelist-remove</option></select>
+        <input placeholder="Reason (optional)" id="preason" />
+        <button class="primary" onclick="pact()">Run</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="v-mods">
+    <div class="card"><h3 style="margin-top:0">Mods (86)</h3>
+      <table><thead><tr><th>Mod</th><th>Version</th><th>Loader</th><th class="num">KB</th><th>State</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>Architectury</td><td>13.0.11</td><td>neoforge</td><td class="num">571</td><td>on</td>
+          <td><button>Disable</button> <button>Updates</button></td></tr>
+        <tr><td>Create</td><td>6.0.5</td><td>neoforge</td><td class="num">4821</td><td>on</td>
+          <td><button>Disable</button> <button onclick="toast('Create: current (13.0.11 → 13.0.11)') ">Updates</button></td></tr>
+        <tr><td>Aerowear</td><td>1.0.0</td><td>neoforge</td><td class="num">7</td><td>off</td>
+          <td><button>Enable</button> <button>Updates</button></td></tr>
+      </tbody></table>
+      <p style="font-size:12px;color:var(--muted)">Mod changes apply on server restart.</p>
+    </div>
+  </section>
+
+  <section class="view" id="v-backups">
+    <div class="card"><h3 style="margin-top:0">Backups (2)</h3>
+      <button class="primary" onclick="toast('Backup started…','ok')">Create backup</button>
+      <ul><li>backup-20261010-034801.zip (198 MB) <a href="#" onclick="return false">Download</a>
+        <button>Restore</button> <button>Delete</button></li>
+        <li>backup-20261010-034643.zip (198 MB) <a href="#" onclick="return false">Download</a>
+        <button>Restore</button> <button>Delete</button></li></ul>
+      <p style="font-size:12px;color:var(--muted)">Schedule: backup every off · restart at off</p>
+    </div>
+  </section>
+
+  <section class="view" id="v-metrics">
+    <div class="card statrow">
+      <div class="stat"><span>MC CPU</span><b>34%</b></div>
+      <div class="stat"><span>MC RAM</span><b>4.2 GB</b></div>
+      <div class="stat"><span>Threads</span><b>96</b></div>
+      <div class="stat"><span>Host CPU</span><b>41%</b></div>
+    </div>
+    <div class="card"><h3 style="margin-top:0">MC CPU% · last hour</h3>
+      <svg width="100%" height="90" viewBox="0 0 400 90" preserveAspectRatio="none">
+        <path d="M0,60 L40,58 L80,62 L120,55 L160,50 L200,30 L240,34 L280,28 L320,40 L360,38 L400,42"
+          fill="none" stroke="var(--accent)" stroke-width="2"/>
+      </svg></div>
+    <div class="card"><table>
+      <thead><tr><th>PID</th><th>Name</th><th class="num">CPU%</th><th class="num">RSS MB</th><th class="num">Threads</th></tr></thead>
+      <tbody><tr><td>24240</td><td>java</td><td class="num">31.2</td><td class="num">4100</td><td class="num">84</td></tr>
+      <tr><td>24804</td><td>java</td><td class="num">2.1</td><td class="num">120</td><td class="num">12</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <section class="view" id="v-settings">
+    <div class="card"><h3 style="margin-top:0">Server</h3>
+      <p>Folder: <code>C:/…/CreateAero-Froststained</code><br/>MC 1.21.1 · NeoForge 21.1.248 · RCON reachable</p></div>
+    <div class="card"><h3 style="margin-top:0">Appearance</h3>
+      <button onclick="setTheme('dark')">Frost Dark</button>
+      <button onclick="setTheme('light')">Frost Light</button></div>
+    <div class="card"><h3 style="margin-top:0">Mod sources</h3>
+      <input placeholder="CurseForge API key" style="width:260px" /> <button>Save</button></div>
+  </section>
+</main>
+<div id="toasts"></div>
+<script>
+  const titles = { console:'Console', players:'Players', mods:'Mods',
+    backups:'Backups', metrics:'Metrics', settings:'Settings' };
+  document.querySelectorAll('aside button[data-v]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('aside button[data-v]').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('v-' + b.dataset.v).classList.add('active');
+    document.getElementById('title').textContent = titles[b.dataset.v];
+  });
+  function toast(msg, cls) {
+    const t = document.createElement('div');
+    t.className = 'toast ' + (cls || ''); t.textContent = msg;
+    document.getElementById('toasts').appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+  function setTheme(t) {
+    document.documentElement.dataset.theme = t;
+    document.getElementById('theme').textContent = t === 'dark' ? '☾ theme' : '☀ theme';
+  }
+  document.getElementById('theme').onclick = () =>
+    setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+  const log = document.getElementById('log');
+  const seed = [
+    ['[10:28:01] [Server thread/INFO]: Done (13.7s)! For help, type "help"', ''],
+    ['[10:28:44] [Server thread/INFO]: Steve joined the game', 'join'],
+    ['[10:29:02] [Server thread/WARN]: Running in offline mode - voice chat not secure!', 'warn'],
+    ['[Rcon: Added frosttestuser to the whitelist', 'rcon'],
+  ];
+  seed.forEach(([t, c]) => {
+    const d = document.createElement('div'); if (c) d.className = c; d.textContent = t; log.appendChild(d);
+  });
+  const ambient = [
+    ['[Server thread/INFO]: Saving sub-levels for ServerLevel…/minecraft:overworld', ''],
+    ['[RCON Listener/INFO]: Thread RCON Client /127.0.0.1 started', ''],
+  ];
+  let ai = 0;
+  setInterval(() => {
+    const [t, c] = ambient[ai++ % ambient.length];
+    const d = document.createElement('div'); if (c) d.className = c;
+    d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + t;
+    log.appendChild(d); log.scrollTop = log.scrollHeight;
+  }, 6000);
+  const hist = [];
+  function sendCmd(e) {
+    e.preventDefault();
+    const inp = document.getElementById('cmd');
+    const cmd = inp.value.trim(); if (!cmd) return false;
+    hist.push(cmd); inp.value = '';
+    const d = document.createElement('div'); d.textContent = '> ' + cmd; log.appendChild(d);
+    const r = document.createElement('div');
+    r.textContent = cmd === 'list'
+      ? 'There are 2 of a max of 20 players online: Porado, Steve' : 'ok';
+    log.appendChild(r); log.scrollTop = log.scrollHeight;
+    return false;
+  }
+  function power(a) {
+    toast(a === 'kill' ? 'SIGKILL sent (mock)' : a + ' requested (mock)', a === 'kill' ? 'err' : 'ok');
+    if (a === 'stop' || a === 'kill')
+      document.getElementById('statepill').textContent = '○ Stopped';
+    if (a === 'start' || a === 'restart')
+      document.getElementById('statepill').textContent = '● Running · pid 24240 · up 0h00m';
+  }
+  function pact() {
+    const n = document.getElementById('pname').value || 'Steve';
+    toast(document.getElementById('pact').value + ' ' + n + ' (mock)', 'ok');
+  }
+</script>
+</body>
+</html>
