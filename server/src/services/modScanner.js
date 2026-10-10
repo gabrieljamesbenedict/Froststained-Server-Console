@@ -60,6 +60,7 @@ export function scanMod(file) {
   const info = {
     file: base,
     sizeKb: Math.round(stat.size / 1024),
+    mtimeMs: Math.round(stat.mtimeMs),
     enabled,
     loader: 'unknown',
     modId: null,
