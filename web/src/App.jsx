@@ -534,6 +534,39 @@ function Backups() {
   );
 }
 
+function PasswordForm() {
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [msg, setMsg] = useState('');
+  const submit = async (e) => {
+    e.preventDefault();
+    setMsg('');
+    if (next !== confirm) {
+      setMsg('new passwords do not match');
+      return;
+    }
+    try {
+      await api('/api/auth/password', { method: 'POST', body: { currentPassword: current, newPassword: next } });
+      setMsg('password changed - other sessions signed out');
+      setCurrent('');
+      setNext('');
+      setConfirm('');
+    } catch (err) {
+      setMsg(err.message);
+    }
+  };
+  return (
+    <form onSubmit={submit} style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+      <input placeholder="Current password" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" />
+      <input placeholder="New password (8+ chars)" type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" />
+      <input placeholder="Confirm new" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
+      <button type="submit">Change password</button>
+      {msg && <span style={{ fontSize: 12 }}>{msg}</span>}
+    </form>
+  );
+}
+
 export default function App() {
   const [state, setState] = useState({ loading: true, needsSetup: false, user: null });
 
@@ -569,6 +602,7 @@ export default function App() {
             Signed in as <strong>{state.user.username}</strong> ({state.user.role}){' '}
             <button onClick={logout}>Sign out</button>
           </p>
+          <PasswordForm />
           <Console />
           <Players />
           <Mods />

@@ -123,4 +123,21 @@ export default async function authRoutes(app) {
   });
 
   app.get('/api/auth/me', { preHandler: app.requireAuth }, async (req) => req.user);
+
+  app.post('/api/auth/password', { preHandler: app.requireAuth }, async (req, reply) => {
+    const { currentPassword, newPassword } = req.body ?? {};
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+    if (!user || typeof currentPassword !== 'string' || !(await bcrypt.compare(currentPassword, user.password_hash))) {
+      return reply.code(401).send({ error: 'current password is incorrect' });
+    }
+    if (typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 128) {
+      return reply.code(400).send({ error: 'new password must be 8-128 characters' });
+    }
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(await bcrypt.hash(newPassword, BCRYPT_COST), user.id);
+    // Log out other sessions; keep this one.
+    const current = crypto.createHash('sha256').update(req.cookies[COOKIE_NAME]).digest('hex');
+    db.prepare('DELETE FROM sessions WHERE user_id = ? AND token_hash != ?').run(user.id, current);
+    audit(db, user.id, 'auth.password', 'password changed');
+    return { ok: true };
+  });
 }
