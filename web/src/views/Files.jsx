@@ -168,7 +168,6 @@ export default function Files() {
         {menu && (
           <div className="menu open" ref={menuRef} style={{ top: menu.top, left: menu.left }}>
             <button onClick={() => openEntry(menu.entry)}>Open</button>
-            {!menu.entry.dir && <button onClick={() => openEntry(menu.entry)}>Edit</button>}
             {!menu.entry.dir && <button onClick={() => download(menu.entry)}>Download</button>}
             <button onClick={() => rename(menu.entry)}>Rename</button>
           </div>

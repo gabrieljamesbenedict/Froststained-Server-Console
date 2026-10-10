@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api.js';
+import { api, toast } from '../api.js';
 
 export function AuthForm({ mode, onDone }) {
   const [username, setUsername] = useState('');
@@ -79,6 +79,24 @@ export function Backups() {
     }
   };
 
+  const download = async (e, b) => {
+    e.preventDefault();
+    const url = `/api/backups/${encodeURIComponent(b.file)}/download`;
+    try {
+      const head = await fetch(url, { method: 'HEAD' });
+      if (!head.ok) throw new Error(`download failed (${head.status})`);
+    } catch (err) {
+      toast('Download failed', err.message, 'err');
+      return;
+    }
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = b.file;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
   const restore = async (f) => {
     if (!window.confirm(`Restore ${f}? The server must be stopped; the current world is overwritten (a safety snapshot is kept).`)) return;
     setError('');
@@ -90,10 +108,9 @@ export function Backups() {
     }
   };
 
-  if (!data) return <section><h2>Backups</h2><p>Loading…</p></section>;
+  if (!data) return <section><p className="muted">Loading…</p></section>;
   return (
     <section>
-      <h2>Backups ({data.count})</h2>
       <button onClick={create} disabled={busy}>{busy ? 'Backing up…' : 'Create backup'}</button>{' '}
       <button onClick={refresh}>Refresh</button>
       {sched && (
@@ -112,7 +129,7 @@ export function Backups() {
               <td>{Math.round(b.sizeKb / 1024)} MB</td>
               <td>{new Date(b.createdAt).toLocaleString()}</td>
               <td align="right">
-                <a href={`/api/backups/${encodeURIComponent(b.file)}/download`}>Download</a>{' '}
+                <a href={`/api/backups/${encodeURIComponent(b.file)}/download`} onClick={(e) => download(e, b)}>Download</a>{' '}
                 <button onClick={() => restore(b.file)}>Restore</button>{' '}
                 <button className="danger" onClick={() => remove(b.file)}>Delete</button>
               </td>
