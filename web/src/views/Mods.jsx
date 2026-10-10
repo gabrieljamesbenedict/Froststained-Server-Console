@@ -11,10 +11,8 @@ export default function Mods() {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('');
   const [selected, setSelected] = useState(new Set());
-  const [checking, setChecking] = useState(null);
   const [dirty, setDirty] = useState(false);
   const fileRef = useRef(null);
-  const checkRun = useRef(0);
 
   const refresh = async () => {
     try {
@@ -89,41 +87,6 @@ export default function Mods() {
     refresh();
   };
 
-  const checkAll = async () => {
-    if (!mods || checking) return;
-    const run = ++checkRun.current;
-    const list = mods.mods;
-    setChecking({ done: 0, total: list.length });
-    const queue = [...list];
-    const workers = Array.from({ length: 4 }, async () => {
-      while (queue.length && checkRun.current === run) {
-        const mod = queue.shift();
-        try {
-          const r = await api(`/api/mods/${encodeURIComponent(mod.file)}/updates`);
-          if (checkRun.current === run) {
-            const mr = r.modrinth;
-            if (mr && !mr.error && mr.latestVersion && mr.upToDate === false) {
-              setChecking((p) => (p ? { ...p, done: p.done + 1, found: [...(p.found ?? []), `${mod.name} → ${mr.latestVersion}`] } : p));
-            } else {
-              setChecking((p) => (p ? { ...p, done: p.done + 1 } : p));
-            }
-          }
-        } catch {
-          if (checkRun.current === run) setChecking((p) => (p ? { ...p, done: p.done + 1 } : p));
-        }
-      }
-    });
-    await Promise.all(workers);
-    if (checkRun.current !== run) return;
-    setChecking((p) => {
-      if (p) {
-        const found = p.found ?? [];
-        toast('Update check', found.length ? `${found.length} update${found.length > 1 ? 's' : ''}: ${found.slice(0, 3).join(', ')}` : `${list.length} mods checked, all current`, found.length ? '' : 'ok');
-      }
-      return null;
-    });
-  };
-
   const restart = async () => {
     try {
       await api('/api/server/restart', { method: 'POST' });
@@ -144,59 +107,60 @@ export default function Mods() {
 
   return (
     <div className="card fill">
-      <div className="grow" style={{ display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, flex: 1 }}>
-        <input
-          className="search"
-          placeholder="Search"
-          style={{ margin: '0 0 8px 0' }}
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        />
-        {error && <p style={{ color: 'var(--stain)' }}>{error}</p>}
-        {dirty && (
-          <div style={{ borderLeft: '3px solid var(--warn)', padding: '8px 12px', marginBottom: 8, background: 'var(--bg)', borderRadius: '0 6px 6px 0' }}>
-            Mod changes need a server restart to apply.{' '}
-            <button onClick={restart}>Restart now</button>{' '}
-            <button onClick={() => setDirty(false)}>Later</button>
+      <div className="rail" style={{ flex: 1, minHeight: 0 }}>
+        <div className="grow" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <input
+            className="search"
+            placeholder="Search"
+            style={{ margin: '0 0 8px 0' }}
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          />
+          {error && <p style={{ color: 'var(--stain)' }}>{error}</p>}
+          {dirty && (
+            <div style={{ borderLeft: '3px solid var(--warn)', padding: '8px 12px', marginBottom: 8, background: 'var(--bg)', borderRadius: '0 6px 6px 0' }}>
+              Mod changes need a server restart to apply.{' '}
+              <button onClick={restart}>Restart now</button>{' '}
+              <button onClick={() => setDirty(false)}>Later</button>
+            </div>
+          )}
+          <div className="scroll">
+            <table style={{ tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: 64 }} /><col /><col style={{ width: 110 }} />
+                <col style={{ width: 130 }} /><col style={{ width: 90 }} />
+              </colgroup>
+              <thead>
+                <tr><th>Enable</th><th>Name</th><th>Version</th><th>Last modified</th><th>Loader</th></tr>
+              </thead>
+              <tbody>
+                {visible.map((m) => (
+                  <tr
+                    key={m.file}
+                    onClick={() => toggleSelect(m.file)}
+                    style={selected.has(m.file) ? { background: 'var(--border)', cursor: 'pointer' } : { cursor: 'pointer' }}
+                  >
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" checked={m.enabled} onChange={() => toggleOne(m)} title={m.enabled ? 'Disable' : 'Enable'} />
+                    </td>
+                    <td>
+                      {m.name}<br /><span className="muted num">{m.file}</span>
+                    </td>
+                    <td className="num">{m.version ?? '?'}</td>
+                    <td className="num">{fmtModified(m.mtimeMs)}</td>
+                    <td>{m.loader}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
-        <div className="row" style={{ margin: '0 0 8px 0' }}>
+          <p className="muted">{visible.length} of {mods.count} mods{selected.size ? ` · ${selected.size} selected` : ''} · changes apply on restart</p>
+        </div>
+        <div className="side">
           <button onClick={() => fileRef.current?.click()}>Add File</button>
           <input ref={fileRef} type="file" accept=".jar" style={{ display: 'none' }} onChange={upload} />
           <button className="danger" onClick={removeSelected}>Remove{selected.size ? ` (${selected.size})` : ''}</button>
-          <button onClick={checkAll} disabled={!!checking}>{checking ? `Checking ${checking.done}/${checking.total}…` : 'Check for Updates'}</button>
         </div>
-        <div className="scroll">
-          <table style={{ tableLayout: 'fixed' }}>
-            <colgroup>
-              <col style={{ width: 64 }} /><col /><col style={{ width: 110 }} />
-              <col style={{ width: 130 }} /><col style={{ width: 90 }} />
-            </colgroup>
-            <thead>
-              <tr><th>Enable</th><th>Name</th><th>Version</th><th>Last modified</th><th>Loader</th></tr>
-            </thead>
-            <tbody>
-              {visible.map((m) => (
-                <tr
-                  key={m.file}
-                  onClick={() => toggleSelect(m.file)}
-                  style={selected.has(m.file) ? { background: 'var(--border)', cursor: 'pointer' } : { cursor: 'pointer' }}
-                >
-                  <td onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" checked={m.enabled} onChange={() => toggleOne(m)} title={m.enabled ? 'Disable' : 'Enable'} />
-                  </td>
-                  <td>
-                    {m.name}<br /><span className="muted num">{m.file}</span>
-                  </td>
-                  <td className="num">{m.version ?? '?'}</td>
-                  <td className="num">{fmtModified(m.mtimeMs)}</td>
-                  <td>{m.loader}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="muted">{visible.length} of {mods.count} mods{selected.size ? ` · ${selected.size} selected` : ''} · changes apply on restart</p>
       </div>
     </div>
   );
