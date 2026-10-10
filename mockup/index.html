@@ -99,7 +99,8 @@
   #v-console.active { display: flex; flex-direction: column; flex: 1; }
   #v-mods.active, #v-players.active { display: flex; flex-direction: column; flex: 1; height: calc(100vh - 130px); }
   #v-mods .card.fill, #v-players .card.fill { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
-  #v-mods .scroll, #v-players .scroll { flex: 1; overflow-y: auto; min-height: 0; }
+  #v-mods .scroll, #v-players .scroll { flex: 1 1 auto; overflow-y: scroll; min-height: 0; max-height: 100%; }
+  #v-mods .rail { min-height: 0; }
   #v-mods .rail > .side { overflow-y: auto; min-height: 0; }
   #v-console .card.fill { display: flex; flex-direction: column; flex: 1; }
   #logfull { flex: 1; min-height: 300px; }
@@ -108,7 +109,7 @@
   .muted { color: var(--muted); font-size: 12px; }
   .crumb { font-size: 13px; margin-bottom: 8px; }
   .crumb a { color: var(--accent); text-decoration: none; }
-  .menu { position: absolute; background: var(--surface); border: 1px solid var(--border);
+  .menu { position: fixed; background: var(--surface); border: 1px solid var(--border);
     border-radius: 6px; padding: 4px; display: none; z-index: 20; min-width: 150px; }
   .menu.open { display: block; }
   .menu button { display: block; width: 100%; border: none; text-align: left; background: none; }
@@ -244,12 +245,12 @@
       </div>
       <div class="scroll"><table style="table-layout:fixed"><colgroup><col style="width:30%" /><col style="width:18%" /><col style="width:14%" /><col style="width:12%" /><col /></colgroup><thead><tr><th>Player</th><th>Online for</th><th>Playtime</th><th>Deaths</th><th align="right"></th></tr></thead>
       <tbody id="prows"></tbody></table></div>
+      <div id="pdrawer" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;max-height:30%;overflow-y:auto"></div>
       <div class="menu" id="pctx">
         <button>Kick</button><button>Ban</button><button>Pardon</button>
         <button>Op</button><button>Deop</button>
         <button>Whitelist add</button><button>Whitelist remove</button>
       </div>
-      <div id="pdrawer" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px"></div>
     </div>
   </section>
 
@@ -445,8 +446,8 @@ motd=Welcome to Froststained\!</textarea>
       e.stopPropagation();
       menuFor = b.dataset.p;
       const r = b.getBoundingClientRect();
-      menu.style.top = (r.bottom + window.scrollY + 4) + 'px';
-      menu.style.left = (r.left + window.scrollX - 120) + 'px';
+      menu.style.top = (r.bottom + 4) + 'px';
+      menu.style.left = (r.left - 120) + 'px';
       menu.classList.add('open');
     });
   }
