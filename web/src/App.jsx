@@ -156,6 +156,19 @@ function Console() {
   );
 }
 
+function Spark({ values, width = 220, height = 40 }) {
+  const pts = values.filter((v) => v != null);
+  if (pts.length < 2) return <span style={{ fontSize: 12 }}>collecting…</span>;
+  const max = Math.max(...pts, 1);
+  const step = width / (pts.length - 1);
+  const d = pts.map((v, i) => `${i === 0 ? 'M' : 'L'}${(i * step).toFixed(1)},${(height - (v / max) * (height - 4) - 2).toFixed(1)}`).join(' ');
+  return (
+    <svg width={width} height={height} style={{ background: '#f4f4f4', display: 'block' }}>
+      <path d={d} fill="none" stroke="#333" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
 function Dashboard() {
   const [m, setM] = useState(null);
   const [error, setError] = useState('');
@@ -184,27 +197,10 @@ function Dashboard() {
   if (error) return <p style={{ color: 'crimson' }}>metrics: {error}</p>;
   if (!m?.system?.latest) return <p>Loading metrics…</p>;
   const s = m.system.latest;
+  const hist = m.system.history;
   return (
     <section>
-      <h2>Metrics</h2>
-      <p>
-        CPU <strong>{s.cpu.loadPct}%</strong> · RAM <strong>{s.mem.usedMb}/{s.mem.totalMb} MB ({s.mem.usedPct}%)</strong> ·
-        Host uptime <strong>{Math.round(s.uptimeSec / 3600)}h</strong> · Players <strong>{m.server.players.count}</strong>
-      </p>
-      {m.server.players.count > 0 && <p>{m.server.players.players.map((p) => p.name).join(', ')}</p>}
-      <h3>Disks</h3>
-      <ul>
-        {s.disks.map((d) => (
-          <li key={d.mount + d.fs}>{d.mount} ({d.fs}): {d.usedPct}% of {Math.round(d.sizeMb / 1024)} GB</li>
-        ))}
-      </ul>
-      <h3>Network (KB/s)</h3>
-      <ul>
-        {s.net.map((n) => (
-          <li key={n.iface}>{n.iface}: ↓{n.rxSecKb} ↑{n.txSecKb}</li>
-        ))}
-      </ul>
-      <h3>MC process</h3>
+      <h2>Minecraft server</h2>
       {!m.process.running ? (
         <p>Server process not running.</p>
       ) : (
@@ -213,6 +209,10 @@ function Dashboard() {
             PID {m.process.rootPid}: CPU <strong>{m.process.totalCpuPct}%</strong> · RAM{' '}
             <strong>{m.process.totalMemMb} MB</strong> · threads <strong>{m.process.totalThreads}</strong>
           </p>
+          <p style={{ fontSize: 12 }}>CPU% history</p>
+          <Spark values={hist.map((h) => h.mcCpuPct)} />
+          <p style={{ fontSize: 12 }}>RAM MB history</p>
+          <Spark values={hist.map((h) => h.mcMemMb)} />
           <table>
             <thead>
               <tr>
@@ -237,6 +237,19 @@ function Dashboard() {
           </table>
         </>
       )}
+      <h2>Host</h2>
+      <p>
+        CPU <strong>{s.cpu.loadPct}%</strong> · RAM <strong>{s.mem.usedMb}/{s.mem.totalMb} MB ({s.mem.usedPct}%)</strong> ·
+        uptime <strong>{Math.round(s.uptimeSec / 3600)}h</strong>
+      </p>
+      <h3>Players ({m.server.players.count})</h3>
+      {m.server.players.count > 0 && <p>{m.server.players.players.map((p) => p.name).join(', ')}</p>}
+      <h3>Network (KB/s)</h3>
+      <ul>
+        {s.net.map((n) => (
+          <li key={n.iface}>{n.iface}: ↓{n.rxSecKb} ↑{n.txSecKb}</li>
+        ))}
+      </ul>
     </section>
   );
 }
