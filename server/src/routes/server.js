@@ -1,5 +1,6 @@
 import { audit } from '../db.js';
 import { readLogTail } from '../services/logTail.js';
+import { worldInfo } from '../services/worldInfo.js';
 
 function errToStatus(err) {
   if (err.code === 'ALREADY_RUNNING' || err.code === 'PORT_BUSY') return 409;
@@ -15,6 +16,14 @@ export default async function serverRoutes(app) {
   app.get('/api/server/log', { preHandler: app.requireAuth }, async (req) => {
     const lines = Math.min(Math.max(Number(req.query.lines) || 200, 1), 1000);
     return { lines: readLogTail(app.config.serverPath, lines) };
+  });
+
+  app.get('/api/server/world', { preHandler: app.requireAuth }, async (req, reply) => {
+    try {
+      return worldInfo(app.config.serverPath);
+    } catch (err) {
+      return reply.code(errToStatus(err)).send({ error: err.message });
+    }
   });
 
   app.post('/api/server/start', { preHandler: app.requireAuth }, async (req, reply) => {
