@@ -308,23 +308,27 @@
   </section>
 
   <section class="view" id="v-files">
-    <div class="card"><h3>My Drive · server</h3>
-      <div class="crumb"><a href="#" onclick="return false">server</a> /</div>
+    <div class="card"><h3>Server files</h3>
       <div class="row" style="margin:0 0 8px 0">
-        <button class="primary" onclick="toast('Upload','Pick files to upload (mock)')">＋ New / Upload</button>
+        <span class="crumb" style="margin:0"><a href="#" onclick="return false">server</a> /</span>
+        <span class="spacer"></span>
+        <button class="primary" onclick="toast('Upload','Pick files to upload (mock)')">Upload</button>
       </div>
       <table><thead><tr><th>Name</th><th class="num">Size</th><th>Modified</th><th></th></tr></thead>
       <tbody>
-        <tr><td>📁 config</td><td class="num">—</td><td class="num">Aug 29</td><td><button>Open</button></td></tr>
-        <tr><td>📁 mods</td><td class="num">—</td><td class="num">Aug 29</td><td><button>Open</button></td></tr>
-        <tr><td>📁 world</td><td class="num">212 MB</td><td class="num">2h ago</td><td><button>Open</button></td></tr>
+        <tr><td>📁 config</td><td class="num">—</td><td class="num">Aug 29</td><td align="right"><button class="fmenu" data-f="config">⋯</button></td></tr>
+        <tr><td>📁 mods</td><td class="num">—</td><td class="num">Aug 29</td><td align="right"><button class="fmenu" data-f="mods">⋯</button></td></tr>
+        <tr><td>📁 world</td><td class="num">212 MB</td><td class="num">2h ago</td><td align="right"><button class="fmenu" data-f="world">⋯</button></td></tr>
         <tr><td>📄 server.properties</td><td class="num">1.4 KB</td><td class="num">2h ago</td>
-          <td><button onclick="openFile()">Open</button> <button>Download</button></td></tr>
+          <td align="right"><button class="fmenu" data-f="server.properties">⋯</button></td></tr>
         <tr><td>📄 whitelist.json</td><td class="num">18 B</td><td class="num">3d ago</td>
-          <td><button onclick="openFile()">Open</button> <button>Download</button></td></tr>
+          <td align="right"><button class="fmenu" data-f="whitelist.json">⋯</button></td></tr>
         <tr><td>📄 user_jvm_args.txt</td><td class="num">339 B</td><td class="num">12d ago</td>
-          <td><button onclick="openFile()">Open</button> <button>Download</button></td></tr>
+          <td align="right"><button class="fmenu" data-f="user_jvm_args.txt">⋯</button></td></tr>
       </tbody></table>
+      <div class="menu" id="fctx">
+        <button>Open</button><button>Edit</button><button>Download</button><button>Rename</button>
+      </div>
     </div>
   </section>
 
@@ -465,6 +469,21 @@ motd=Welcome to Froststained\!</textarea>
   function closeMenu() { menu.classList.remove('open'); }
   menu.querySelectorAll('button').forEach(b => b.onclick = () =>
     toast(b.textContent + ' ' + menuFor, 'RCON confirmed', 'ok'));
+  const fmenu = document.getElementById('fctx');
+  let fileFor = '';
+  document.querySelectorAll('.fmenu').forEach(b => b.onclick = (e) => {
+    e.stopPropagation();
+    fileFor = b.dataset.f;
+    const r = b.getBoundingClientRect();
+    fmenu.style.top = (r.bottom + 4) + 'px';
+    fmenu.style.left = (r.left - 130) + 'px';
+    fmenu.classList.add('open');
+  });
+  document.addEventListener('click', () => fmenu.classList.remove('open'));
+  fmenu.querySelectorAll('button').forEach(b => b.onclick = () => {
+    if (b.textContent === 'Edit') openFile();
+    else toast(b.textContent + ' ' + fileFor, '(mock)');
+  });
   const row = (name, sub, c2, play, deaths) =>
     `<tr onclick="pdetail('${name}', '${c2}', '${play}', '${deaths}', ${name === 'Porado'}, false)">`
     + `<td>${name}${name === 'Porado' ? ' (Op)' : ''}<br /><span class="muted num">${sub}</span></td>`
