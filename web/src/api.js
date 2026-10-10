@@ -34,7 +34,7 @@ export const LIMITS = {
   consoleLines: 500,
   commandHistory: 50,
   netSamples: 60,
-  auditFeed: 8,
+  auditFeed: 15,
   logTail: 30,
   modSearch: 10,
   modCheckConcurrency: 4,
