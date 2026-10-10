@@ -11,6 +11,7 @@ import metricsRoutes from './routes/metrics.js';
 import playersRoutes from './routes/players.js';
 import modsRoutes from './routes/mods.js';
 import backupsRoutes from './routes/backups.js';
+import filesRoutes from './routes/files.js';
 import scheduleRoutes from './routes/schedule.js';
 import auditRoutes from './routes/audit.js';
 import { attachConsoleWs } from './ws/console.js';
@@ -75,11 +76,12 @@ app.register(metricsRoutes);
 app.register(playersRoutes);
 app.register(modsRoutes);
 app.register(backupsRoutes);
+app.register(filesRoutes);
 app.register(scheduleRoutes);
 app.register(auditRoutes);
 attachConsoleWs(app);
 
-// TODO (later phases): mods, backups.
+// Files browser serves the explorer view; mods/backups mount their own routes.
 
 if (fs.existsSync(DIST)) {
   await app.register(fastifyStatic, { root: DIST });
