@@ -74,6 +74,9 @@
   .term .warn { color: var(--warn); } .term .rcon { color: var(--accent); }
   .term .join { color: var(--ok); }
   .row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+  .control-card { display: flex; flex-direction: column; }
+  .control-card .row { flex: 1; align-items: stretch; }
+  .control-card .row button { font-size: 14px; }
   button, .btn { background: var(--surface); color: var(--text); border: 1px solid var(--border);
     border-radius: 6px; padding: 7px 14px; font: 500 13px "Monaspace Xenon", monospace; cursor: pointer; }
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -147,7 +150,7 @@
 
   <section class="view active" id="v-dash">
     <div class="grid">
-      <div class="card span6"><h3>Server control</h3>
+      <div class="card span6 control-card"><h3>Server control</h3>
         <div class="row" style="margin-top:0">
           <button class="primary" style="flex:1" onclick="power('start')">Start server</button>
           <button style="flex:1" onclick="power('stop')">Stop</button>
