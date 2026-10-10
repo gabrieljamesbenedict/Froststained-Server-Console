@@ -43,7 +43,7 @@ async function threadCounts(pids) {
   return out;
 }
 
-export async function processTree(rootPid) {
+export async function processTree(rootPid, { threads = true } = {}) {
   if (!rootPid) return { running: false };
   const { list } = await si.processes();
   const byPid = new Map(list.map((p) => [p.pid, p]));
@@ -64,18 +64,18 @@ export async function processTree(rootPid) {
     for (const c of children.get(pid) ?? []) stack.push(c);
   }
 
-  const threads = await threadCounts(tree.map((p) => p.pid));
+  const counts = threads ? await threadCounts(tree.map((p) => p.pid)) : new Map();
   const processes = tree.map((p) => ({
     pid: p.pid,
     name: p.name,
     cpuPct: Math.round(p.cpu * 10) / 10,
     memPct: Math.round(p.mem * 10) / 10,
     memRssMb: Math.round(p.memRss / 1024),
-    threads: threads.get(p.pid) ?? null,
+    threads: threads ? (counts.get(p.pid) ?? null) : null,
   }));
   const totalCpu = Math.round(processes.reduce((a, p) => a + p.cpuPct, 0) * 10) / 10;
   const totalMemMb = processes.reduce((a, p) => a + p.memRssMb, 0);
-  const totalThreads = [...threads.values()].reduce((a, n) => a + n, 0);
+  const totalThreads = [...counts.values()].reduce((a, n) => a + n, 0);
 
   return { running: true, rootPid, totalCpuPct: totalCpu, totalMemMb, totalThreads, processes };
 }

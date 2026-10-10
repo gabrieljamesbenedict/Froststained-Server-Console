@@ -45,7 +45,7 @@ const mc = new ProcessManager({
 });
 app.decorate('mc', mc);
 const metrics = new SystemMetrics();
-metrics.start(config.serverPath);
+metrics.start(config.serverPath, { getMcPid: () => mc.status().pid });
 app.decorate('metrics', metrics);
 app.decorate('players', new PlayerTracker(mc, config.serverPath));
 app.decorate('processTree', processTree);

@@ -1,4 +1,5 @@
 import si from 'systeminformation';
+import { processTree } from './processTree.js';
 
 const HISTORY_MAX = 120; // 10 min at 5s polls
 
@@ -12,8 +13,9 @@ export class SystemMetrics {
     this.timer = null;
   }
 
-  start(serverPath) {
+  start(serverPath, { getMcPid } = {}) {
     this.serverPath = serverPath;
+    this.getMcPid = getMcPid;
     void this.poll();
     this.timer = setInterval(() => void this.poll(), this.intervalMs);
     if (this.timer.unref) this.timer.unref();
@@ -31,6 +33,21 @@ export class SystemMetrics {
       ]);
       const cpuPct = Math.round(load.currentLoad * 10) / 10;
       const memPct = Math.round((mem.used / mem.total) * 1000) / 10;
+      // MC totals for history: cheap tree walk without thread lookup.
+      let mcCpuPct = null;
+      let mcMemMb = null;
+      try {
+        const pid = this.getMcPid?.();
+        if (pid) {
+          const tree = await processTree(pid, { threads: false });
+          if (tree.running) {
+            mcCpuPct = tree.totalCpuPct;
+            mcMemMb = tree.totalMemMb;
+          }
+        }
+      } catch {
+        // history keeps host numbers; mc stays null for this point
+      }
       this.latest = {
         t: Date.now(),
         cpu: { loadPct: cpuPct, cores: load.cpus.map((c) => Math.round(c.load * 10) / 10) },
@@ -49,7 +66,7 @@ export class SystemMetrics {
         os: { platform: os.platform, distro: os.distro, release: os.release, arch: os.arch },
         uptimeSec: time.uptime,
       };
-      this.history.push({ t: this.latest.t, cpuPct, memPct });
+      this.history.push({ t: this.latest.t, cpuPct, memPct, mcCpuPct, mcMemMb });
       if (this.history.length > HISTORY_MAX) this.history.shift();
     } catch {
       // A failed poll keeps the previous sample; next tick retries.
