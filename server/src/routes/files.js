@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { audit } from '../db.js';
-import { listDir, readTextFile, renameEntry, resolveServerPath, writeTextFile } from '../services/fileBrowser.js';
+import { deleteEntry, listDir, readTextFile, renameEntry, resolveServerPath, writeTextFile } from '../services/fileBrowser.js';
 
 const MAX_UPLOAD_MB = 50;
 
@@ -56,6 +56,16 @@ export default async function filesRoutes(app) {
     try {
       const info = renameEntry(root(), req.body?.from, req.body?.to);
       audit(app.db, req.user.id, 'file.rename', `${info.from} -> ${info.to}`);
+      return info;
+    } catch (err) {
+      return reply.code(errToStatus(err)).send({ error: err.message });
+    }
+  });
+
+  app.delete('/api/files/entry', { preHandler: requireAdmin }, async (req, reply) => {
+    try {
+      const info = deleteEntry(root(), req.query.path ?? '');
+      audit(app.db, req.user.id, 'file.delete', info.deleted);
       return info;
     } catch (err) {
       return reply.code(errToStatus(err)).send({ error: err.message });
