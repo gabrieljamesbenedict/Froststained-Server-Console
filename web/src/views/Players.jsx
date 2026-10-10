@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, toast } from '../api.js';
+import { api, POLL, toast } from '../api.js';
 
 const ACTIONS = ['kick', 'ban', 'pardon', 'op', 'deop', 'whitelist-add', 'whitelist-remove'];
 
@@ -67,7 +67,7 @@ export default function Players() {
     refreshOnline();
     refreshAll();
     refreshRcon();
-    const t = setInterval(refreshOnline, 10000);
+    const t = setInterval(refreshOnline, POLL.status);
     return () => clearInterval(t);
   }, []);
 

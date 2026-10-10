@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, toast } from './api.js';
+import { api, STORE_KEYS, TOAST_MS, toast } from './api.js';
 import { AuthForm, Backups, PasswordForm } from './views/legacy.jsx';
 import Console from './views/Console.jsx';
 import Metrics from './views/Metrics.jsx';
@@ -32,10 +32,10 @@ const NAV = {
 };
 
 function useTheme() {
-  const [theme, setTheme] = useState(() => localStorage.getItem('frost-theme') || 'dark');
+  const [theme, setTheme] = useState(() => localStorage.getItem(STORE_KEYS.theme) || 'dark');
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem('frost-theme', theme);
+    localStorage.setItem(STORE_KEYS.theme, theme);
   }, [theme]);
   return [theme, setTheme];
 }
@@ -47,7 +47,7 @@ function Toasts() {
       const id = Math.random().toString(36).slice(2);
       const { title, body, kind } = e.detail;
       setItems((prev) => [...prev, { id, title, body, kind }]);
-      setTimeout(() => setItems((prev) => prev.filter((t) => t.id !== id)), 4000);
+      setTimeout(() => setItems((prev) => prev.filter((t) => t.id !== id)), TOAST_MS);
     };
     window.addEventListener('toast', onToast);
     return () => window.removeEventListener('toast', onToast);
@@ -78,7 +78,7 @@ function MasterPower({ user }) {
       }
     };
     poll();
-    const t = setInterval(poll, 10000);
+    const t = setInterval(poll, POLL.status);
     return () => {
       alive = false;
       clearInterval(t);

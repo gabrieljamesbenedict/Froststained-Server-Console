@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, logClass, toast, wsUrl } from '../api.js';
+import { api, LIMITS, logClass, toast, wsUrl } from '../api.js';
 
 function severity(line) {
   if (/\[.*ERROR|exception|caused by/i.test(line)) return 'error';
@@ -17,7 +17,7 @@ export default function Console() {
   const logRef = useRef(null);
 
   const pushLines = (next) =>
-    setLines((prev) => [...prev, ...next].slice(-500));
+    setLines((prev) => [...prev, ...next].slice(-LIMITS.consoleLines));
 
   useEffect(() => {
     let ws;
@@ -52,7 +52,7 @@ export default function Console() {
     if (!cmd) return;
     setCommand('');
     setHistIdx(-1);
-    setHistory((h) => [cmd, ...h].slice(0, 50));
+    setHistory((h) => [cmd, ...h].slice(0, LIMITS.commandHistory));
     pushLines([{ t: Date.now(), stream: 'input', line: `> ${cmd}` }]);
     try {
       await api('/api/server/command', { method: 'POST', body: { command: cmd } });
