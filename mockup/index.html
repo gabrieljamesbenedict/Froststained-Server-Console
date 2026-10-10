@@ -95,6 +95,11 @@
     background: var(--border); vertical-align: middle; text-align: center;
     font-size: 12px; line-height: 24px; color: var(--muted); }
   .view { display: none; } .view.active { display: block; }
+  #v-console.active { display: flex; flex-direction: column; flex: 1; }
+  #v-console .card.fill { display: flex; flex-direction: column; flex: 1; }
+  #logfull { flex: 1; min-height: 300px; }
+  .cmdrow { align-items: stretch; }
+  .cmdrow input { flex: 1; }
   .muted { color: var(--muted); font-size: 12px; }
   .crumb { font-size: 13px; margin-bottom: 8px; }
   .crumb a { color: var(--accent); text-decoration: none; }
@@ -182,16 +187,10 @@
   </section>
 
   <section class="view" id="v-console">
-    <div class="card"><h3>Terminal</h3>
-      <div class="row" style="margin:0 0 8px 0">
-        <label class="muted"><input type="checkbox" checked /> Follow</label>
-        <select><option>all levels</option><option>info+</option><option>warn+</option><option>errors</option></select>
-        <button>Download log</button>
-      </div>
-      <div class="term" id="logfull" style="height:calc(100vh - 380px);min-height:300px"></div>
-      <form class="row" onsubmit="return sendCmd(event)">
-        <input id="cmd" placeholder="command… (try: list)" style="flex:1" autocomplete="off" />
-        <button class="primary" type="submit">Send</button>
+    <div class="card fill"><div class="term" id="logfull"></div>
+      <form class="row cmdrow" onsubmit="return sendCmd(event)">
+        <input id="cmd" placeholder="command… (try: list)" autocomplete="off" />
+        <button type="submit">Send</button>
       </form>
     </div>
   </section>
