@@ -30,6 +30,8 @@ function homeOf(check) {
 
 export default function Mods() {
   const [mods, setMods] = useState(null);
+  // Action rail hidden for now; flip to re-enable download/check/add/remove.
+  const SHOW_ACTIONS = false;
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('');
   const [selected, setSelected] = useState(new Set());
@@ -270,6 +272,7 @@ export default function Mods() {
             {checking ? ` · checking ${checking.done}/${checking.total}…` : ''}
           </p>
         </div>
+        {SHOW_ACTIONS && (
         <div className="side">
           <button onClick={() => setDl({ source: 'modrinth', q: '', hits: null, picked: null, versions: null, busy: false })}>Download Mods</button>
           <button onClick={checkAll} disabled={!!checking}>{checking ? `Checking ${checking.done}/${checking.total}…` : 'Check for Updates'}</button>
@@ -287,6 +290,7 @@ export default function Mods() {
           <button onClick={viewHomepage}>View Homepage</button>
           <button onClick={exportList}>Export List</button>
         </div>
+        )}
       </div>
       {dl && <DownloadDialog dl={dl} setDl={setDl} onInstalled={refresh} />}
     </div>
