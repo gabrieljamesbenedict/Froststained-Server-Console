@@ -5,8 +5,8 @@
   "type": "module",
   "license": "GPL-3.0-or-later",
   "scripts": {
-    "dev": "node src/index.js --config ../config.example.yml --data-file ../data/dev.db",
-    "start": "node src/index.js"
+    "dev": "node src/index.mjs --config ../config.example.yml --data-file ../data/dev.db",
+    "start": "node src/index.mjs"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.3",

@@ -18,5 +18,9 @@ config.yaml
 .idea/
 Desktop.ini
 coverage/
+release/
+server/build-sea/
+server/sea-prep.blob
+server/sea-config.json
 .DS_Store
 Thumbs.db

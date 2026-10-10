@@ -37,7 +37,7 @@ Froststained-Server-Console/
 
 ## Backend (`server/`)
 
-**Entry**: `server/src/index.js` — ESM, Node 22, Fastify 5.
+**Entry**: `server/src/index.mjs` — ESM, Node 22, Fastify 5.
 
 ### Core Modules
 

@@ -23,7 +23,27 @@ Minecraft Java server management console for LAN. Single server per console inst
 3. `npm run dev:server` + `npm run dev:web`
 4. Open `http://<lan-ip>:3100`
 
-Second instance: `node server/src/index.js --port 3101` with separate config.
+Second instance: `node server/src/index.mjs --port 3101` with separate config.
+
+## Shipping a single-exe release
+
+```powershell
+npm install          # once, for postject + esbuild
+npm run release
+```
+
+Produces `release/` with `fssc.exe` (backend + frontend embedded in the node
+binary), `config.example.yml`, and `README.txt` — that folder is the whole
+distribution. The exe reads `config.yaml` from beside it; `data/` and
+`backups/` are created on first run.
+
+Release steps, for reference: build web → bundle the backend to CJS with
+esbuild → generate the SEA blob → inject into a copy of `node` with postject →
+package. The blob is rebuilt every time because Vite emits content-hashed
+filenames.
+
+Dev is unaffected: `npm run dev:server` still runs the ESM entry directly and
+serves `web/dist/` from disk.
 
 ## Structure
 
