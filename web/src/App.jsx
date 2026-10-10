@@ -190,12 +190,17 @@ export default function App() {
   const [theme, setTheme] = useTheme();
   const [view, setView] = useState('dash');
   const [state, setState] = useState({ loading: true, needsSetup: false, user: null });
+  const [info, setInfo] = useState(null);
 
   useEffect(() => {
     const onAuth = () => setState((s) => ({ ...s, user: null }));
     window.addEventListener('unauthorized', onAuth);
     return () => window.removeEventListener('unauthorized', onAuth);
   }, []);
+
+  useEffect(() => {
+    if (state.user) api('/api/server/info').then(setInfo).catch(() => {});
+  }, [state.user]);
 
   useEffect(() => {
     (async () => {
@@ -258,7 +263,7 @@ export default function App() {
         <button className={`nav acct${view === 'account' ? ' active' : ''}`} onClick={() => setView('account')}>
           <span>Account · {state.user.username}</span>
         </button>
-        <div className="foot">v0.1 · :3100</div>
+        <div className="foot">v{info?.console?.version ?? '…'} · :{info?.console?.port ?? '…'}</div>
       </aside>
       <main>
         <header className="top">

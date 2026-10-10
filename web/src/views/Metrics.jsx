@@ -31,8 +31,13 @@ function formatUptime(sec) {
 
 export default function Metrics() {
   const [m, setM] = useState(null);
+  const [info, setInfo] = useState(null);
   const [error, setError] = useState('');
   const [netHist, setNetHist] = useState([]);
+
+  useEffect(() => {
+    api('/api/server/info').then(setInfo).catch(() => {});
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -105,7 +110,11 @@ export default function Metrics() {
             />
           </svg>
         )}
-        <p className="muted">{net ? `${net.iface} · ` : ''}Minecraft :25565 negligible while empty</p>
+        <p className="muted">
+          {net ? `${net.iface} · ` : ''}
+          Minecraft {info?.gamePort ? `:${info.gamePort} ` : ''}
+          {m.server.players.count === 0 ? 'negligible while empty' : `serving ${m.server.players.count} player${m.server.players.count === 1 ? '' : 's'}`}
+        </p>
       </div>
       <div className="card span6">
         <h3>Processes</h3>
