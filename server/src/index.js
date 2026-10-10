@@ -12,6 +12,7 @@ import playersRoutes from './routes/players.js';
 import modsRoutes from './routes/mods.js';
 import backupsRoutes from './routes/backups.js';
 import scheduleRoutes from './routes/schedule.js';
+import auditRoutes from './routes/audit.js';
 import { attachConsoleWs } from './ws/console.js';
 import { loadConfig } from './config.js';
 import { openDb } from './db.js';
@@ -75,6 +76,7 @@ app.register(playersRoutes);
 app.register(modsRoutes);
 app.register(backupsRoutes);
 app.register(scheduleRoutes);
+app.register(auditRoutes);
 attachConsoleWs(app);
 
 // TODO (later phases): mods, backups.
