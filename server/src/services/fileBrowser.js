@@ -3,7 +3,7 @@ import path from 'node:path';
 
 // Server file browser. Every path stays jailed inside serverPath:
 // normalized, joined, then containment-checked. Text editing caps at 1 MB
-// with a .bak kept beside the original, matching the mockup contract.
+// with a .bak kept beside the original.
 const MAX_TEXT_BYTES = 1024 * 1024;
 
 function bad(msg) {
