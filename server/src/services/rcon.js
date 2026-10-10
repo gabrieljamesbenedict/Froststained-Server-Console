@@ -9,6 +9,7 @@ export class RconService {
     this.host = host;
     this.port = port;
     this.password = password;
+    this._reachable = { at: 0, value: false };
   }
 
   get configured() {
@@ -36,12 +37,18 @@ export class RconService {
     }
   }
 
+  // Reachability is cached briefly: MC logs every RCON connect loudly, so
+  // status polling must not open a connection per call.
   async reachable() {
+    if (Date.now() - this._reachable.at < 30000) return this._reachable.value;
+    let value = false;
     try {
       await this.send('list', 5000);
-      return true;
+      value = true;
     } catch {
-      return false;
+      // stays false; recached so failures don't spam either
     }
+    this._reachable = { at: Date.now(), value };
+    return value;
   }
 }
