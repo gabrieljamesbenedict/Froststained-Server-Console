@@ -82,7 +82,7 @@ export function readTextFile(serverPath, rel) {
   if (stat.size > MAX_TEXT_BYTES) {
     throw bad(`file is over 1 MB (${Math.round(stat.size / 1024)} KB); download it instead`);
   }
-  return { path: clean, sizeKb: Math.round(stat.size / 1024), content: fs.readFileSync(full, 'utf8') };
+  return { path: clean, sizeKb: Math.round(stat.size / 1024), maxBytes: MAX_TEXT_BYTES, content: fs.readFileSync(full, 'utf8') };
 }
 
 export function writeTextFile(serverPath, rel, content) {
