@@ -3,7 +3,15 @@ import path from 'node:path';
 import AdmZip from 'adm-zip';
 import { audit } from '../db.js';
 import { listMods, modsDir, scanMod } from '../services/modScanner.js';
-import { curseforgeCheck, modrinthCheck } from '../services/modSources.js';
+import {
+  curseforgeCheck,
+  curseforgeFiles,
+  curseforgeSearch,
+  downloadJar,
+  modrinthCheck,
+  modrinthSearch,
+  modrinthVersions,
+} from '../services/modSources.js';
 
 const MAX_UPLOAD_MB = 200;
 
@@ -34,7 +42,23 @@ function errToStatus(err) {
   if (err.code === 'BAD_FILE') return 400;
   if (err.code === 'NOT_FOUND') return 404;
   if (err.code === 'CONFLICT') return 409;
+  if (err.code === 'UPSTREAM') return 502;
   return 500;
+}
+
+// Most common loader among installed mods, so search/install default to
+// the server's loader without extra config.
+function detectLoader(serverPath) {
+  const counts = new Map();
+  for (const m of listMods(serverPath).mods) {
+    const loader = (m.loader === 'forge-legacy' ? 'forge' : m.loader ?? '').toLowerCase();
+    if (loader) counts.set(loader, (counts.get(loader) ?? 0) + 1);
+  }
+  let top = null;
+  for (const [loader, n] of counts) {
+    if (!top || n > top[1]) top = [loader, n];
+  }
+  return top?.[0] ?? null;
 }
 
 export default async function modsRoutes(app) {
@@ -109,6 +133,143 @@ export default async function modsRoutes(app) {
     } catch (err) {
       return reply.code(errToStatus(err)).send({ error: err.message });
     }
+  });
+
+  // Download Mods dialog: project search on either source.
+  app.get('/api/mods/search', { preHandler: app.requireAuth }, async (req, reply) => {
+    try {
+      const source = (req.query.source ?? 'modrinth').toLowerCase();
+      const q = req.query.q ?? '';
+      if (source === 'modrinth') return await modrinthSearch(q, { limit: req.query.limit });
+      if (source === 'curseforge') {
+        const apiKey = app.config.curseforgeApiKey;
+        if (!apiKey) return reply.code(400).send({ error: 'set curseforge_api_key in console config for CurseForge search' });
+        return await curseforgeSearch(apiKey, q, { limit: req.query.limit });
+      }
+      return reply.code(400).send({ error: `unknown source "${source}" (modrinth or curseforge)` });
+    } catch (err) {
+      return reply.code(errToStatus(err)).send({ error: err.message });
+    }
+  });
+
+  // Newest-first versions for one search hit, filtered to game + loader.
+  app.get('/api/mods/versions', { preHandler: app.requireAuth }, async (req, reply) => {
+    try {
+      const source = (req.query.source ?? 'modrinth').toLowerCase();
+      const id = req.query.id;
+      if (!id) return reply.code(400).send({ error: 'missing ?id=' });
+      const gameVersion = req.query.game_version ?? app.config.minecraftVersion;
+      if (!gameVersion) {
+        return reply.code(400).send({ error: 'set minecraft_version in config or pass ?game_version=' });
+      }
+      const loader = (req.query.loader ?? detectLoader(app.config.serverPath) ?? '').toLowerCase();
+      if (!loader) {
+        return reply.code(400).send({ error: 'no loader detected (pass ?loader=)' });
+      }
+      if (source === 'modrinth') return await modrinthVersions(id, { gameVersion, loader });
+      if (source === 'curseforge') {
+        const apiKey = app.config.curseforgeApiKey;
+        if (!apiKey) return reply.code(400).send({ error: 'set curseforge_api_key in console config for CurseForge' });
+        return await curseforgeFiles(apiKey, id, { gameVersion, loader });
+      }
+      return reply.code(400).send({ error: `unknown source "${source}" (modrinth or curseforge)` });
+    } catch (err) {
+      return reply.code(errToStatus(err)).send({ error: err.message });
+    }
+  });
+
+  // Install one version file straight into mods/. Overwrites the same
+  // filename (normal for updates); validates the jar before keeping it.
+  app.post('/api/mods/install', { preHandler: app.requireAuth }, async (req, reply) => {
+    const fail = (err) => reply.code(errToStatus(err)).send({ error: err.message });
+    try {
+      const source = (req.body?.source ?? '').toLowerCase();
+      const dir = modsDir(app.config.serverPath);
+      fs.mkdirSync(dir, { recursive: true });
+      let filename;
+      let url;
+      if (source === 'modrinth') {
+        const { id, versionId } = req.body ?? {};
+        if (!id || !versionId) return reply.code(400).send({ error: 'need {source, id, versionId}' });
+        const res = await fetch(`https://api.modrinth.com/v2/version/${encodeURIComponent(versionId)}`, {
+          headers: { 'User-Agent': 'Froststained-Server-Console/0.1.0 (admin console)' },
+          signal: AbortSignal.timeout(15000),
+        });
+        if (!res.ok) {
+          const err = new Error(`upstream ${res.status} for api.modrinth.com`);
+          err.code = 'UPSTREAM';
+          throw err;
+        }
+        const v = await res.json();
+        if (v.project_id !== id) {
+          const err = new Error('version does not belong to the requested project');
+          err.code = 'BAD_FILE';
+          throw err;
+        }
+        const file = (v.files ?? []).find((f) => f.primary && f.filename?.endsWith('.jar'))
+          ?? (v.files ?? []).find((f) => f.filename?.endsWith('.jar'));
+        if (!file) {
+          const err = new Error('no jar in that version');
+          err.code = 'BAD_FILE';
+          throw err;
+        }
+        filename = path.basename(file.filename);
+        url = file.url;
+      } else if (source === 'curseforge') {
+        const apiKey = app.config.curseforgeApiKey;
+        if (!apiKey) return reply.code(400).send({ error: 'set curseforge_api_key in console config for CurseForge' });
+        const { id, versionId } = req.body ?? {};
+        if (!id || !versionId) return reply.code(400).send({ error: 'need {source, id, versionId}' });
+        const res = await fetch(
+          `https://api.curseforge.com/v1/mods/${encodeURIComponent(String(id))}/files/${encodeURIComponent(String(versionId))}`,
+          { headers: { 'User-Agent': 'Froststained-Server-Console/0.1.0 (admin console)', 'x-api-key': apiKey }, signal: AbortSignal.timeout(15000) },
+        );
+        if (!res.ok) {
+          const err = new Error(`upstream ${res.status} for api.curseforge.com`);
+          err.code = 'UPSTREAM';
+          throw err;
+        }
+        const f = (await res.json()).data;
+        if (!f?.downloadUrl || !f.fileName?.endsWith('.jar')) {
+          const err = new Error('no downloadable jar on that file');
+          err.code = 'BAD_FILE';
+          throw err;
+        }
+        filename = path.basename(f.fileName);
+        url = f.downloadUrl;
+      } else {
+        return reply.code(400).send({ error: `unknown source "${req.body?.source}" (modrinth or curseforge)` });
+      }
+      const full = path.join(dir, filename);
+      if (!full.startsWith(dir + path.sep)) {
+        const err = new Error('invalid filename');
+        err.code = 'BAD_FILE';
+        throw err;
+      }
+      await downloadJar(url, full);
+      try {
+        void new AdmZip(full).getEntries();
+      } catch {
+        fs.rmSync(full, { force: true });
+        const err = new Error('downloaded file is not a readable jar');
+        err.code = 'BAD_FILE';
+        throw err;
+      }
+      const info = scanMod(full);
+      audit(app.db, req.user.id, 'mod.install', `${filename} (${source})`);
+      return info;
+    } catch (err) {
+      return fail(err);
+    }
+  });
+
+  // Export List: plain-text mod roster for copy or download.
+  app.get('/api/mods/export', { preHandler: app.requireAuth }, async () => {
+    const { mods } = listMods(app.config.serverPath);
+    const text = mods
+      .map((m) => `${m.name} — ${m.version ?? '?'} (${m.file})${m.enabled ? '' : ' [disabled]'}`)
+      .join('\n');
+    return { count: mods.length, text };
   });
 
   // Per-mod update check. Needs the MC version (config or ?game_version=)
