@@ -23,10 +23,16 @@ Red accents carry the "stained" half of the identity:
 
 ## Layout and nav
 
-- Sidebar order: Dashboard, Metrics, Players, Mods, Backups, Settings.
+- Sidebar order: Dashboard, Server files, Metrics, Players, Mods, Backups, Settings.
 - No bullets/triangles on nav labels; active item gets an accent left bar.
-- Dashboard is the hub: full server console plus summary cards (MC stats,
-  players, backup, mods) linking out to dedicated pages. No separate Console page.
+- Content flex-fills the width (1600px ceiling); no narrow centered column.
+- Dashboard is the hub: Server control card on top (status + power buttons),
+  host CPU/memory/disk card, full server console, player list. No separate
+  Console page, no mods card on the dashboard.
+- Server files tab: breadcrumb browser plus an editor card for text files
+  (allowlist, size cap, backup on save, restart notice).
+- Metrics adds RAM and disk graphs next to CPU.
+- Players and mods use tables with right-aligned numerics and status dots.
 - Topbar: view title, status pill, user, theme toggle. Tables get sticky
   headers, row hover, right-aligned numerics, status dots.
 
