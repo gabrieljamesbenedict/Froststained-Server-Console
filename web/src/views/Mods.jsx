@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, LIMITS, STORE_KEYS, toast } from '../api.js';
+import { api, LIMITS, toast } from '../api.js';
 
 function fmtModified(ms) {
   if (!ms) return '—';
@@ -134,17 +134,6 @@ export default function Mods() {
     setChecking(null);
     setChecks((c) => {
       const ups = Object.entries(c).filter(([f, r]) => list.some((m) => m.file === f) && updateOf(r));
-      const summary = ups.length
-        ? ups.slice(0, LIMITS.updateSummary).map(([f, r]) => {
-          const mod = list.find((m) => m.file === f);
-          return `${mod?.name ?? f} ${mod?.version ?? ''} → ${updateOf(r).version}`;
-        }).join(', ')
-        : '';
-      try {
-        localStorage.setItem(STORE_KEYS.modUpdates, JSON.stringify(
-          ups.length ? { at: Date.now(), count: ups.length, summary: `${ups.length} update${ups.length > 1 ? 's' : ''}: ${summary}` } : null,
-        ));
-      } catch { /* private mode: dashboard just stays quiet */ }
       toast('Update check', ups.length ? `${ups.length} update${ups.length > 1 ? 's' : ''} available` : `${list.length} mods checked, all current`, ups.length ? '' : 'ok');
       return c;
     });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, formatAgo, formatBytes, humanizeActivity, LIMITS, logClass, POLL, STORE_KEYS, toast } from '../api.js';
+import { api, formatBytes, humanizeActivity, LIMITS, logClass, POLL, toast } from '../api.js';
 
 function usePoll(fn, ms, deps = []) {
   useEffect(() => {
@@ -64,17 +64,7 @@ export default function Dashboard({ go }) {
   const [metrics, setMetrics] = useState(null);
   const [tail, setTail] = useState([]);
   const [activity, setActivity] = useState([]);
-  const [sched, setSched] = useState(null);
-  const [backups, setBackups] = useState(null);
   const [world, setWorld] = useState(null);
-  // Filled by the Mods view after an update check; null hides the alert.
-  const [modUpdates, setModUpdates] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(STORE_KEYS.modUpdates));
-    } catch {
-      return null;
-    }
-  });
 
   usePoll(async (alive) => {
     const m = await api('/api/metrics');
@@ -88,23 +78,8 @@ export default function Dashboard({ go }) {
 
   usePoll(async (alive) => {
     const a = await api(`/api/audit?limit=${LIMITS.auditFeed}`);
-    if (alive) {
-      setActivity(a.entries);
-      try {
-        setModUpdates(JSON.parse(localStorage.getItem(STORE_KEYS.modUpdates)));
-      } catch {
-        // private mode: update alert just stays hidden
-      }
-    }
+    if (alive) setActivity(a.entries);
   }, POLL.activity);
-
-  usePoll(async (alive) => {
-    const [sc, b] = await Promise.all([api('/api/schedule'), api('/api/backups')]);
-    if (alive) {
-      setSched(sc);
-      setBackups(b);
-    }
-  }, POLL.slow);
 
   usePoll(async (alive) => {
     const w = await api('/api/server/world').catch(() => null);
@@ -113,41 +88,23 @@ export default function Dashboard({ go }) {
 
   const s = metrics?.system?.latest;
   const players = metrics?.server?.players;
-  const latestBackup = backups?.backups?.[0];
-
-  const alerts = [];
-  if (status.state === 'stopped') {
-    alerts.push(<div className="alert" key="stopped">Server is stopped.</div>);
-  }
-  if (sched?.lastBackupError) {
-    alerts.push(<div className="alert err" key="backup-err">Last scheduled backup failed: {sched.lastBackupError}</div>);
-  }
-  if (modUpdates?.count > 0) {
-    alerts.push(
-      <div className="alert" key="mods">
-        {modUpdates.summary}{' '}
-        <a href="#" onClick={(e) => { e.preventDefault(); go('mods'); }} style={{ color: 'var(--accent)' }}>Review</a>
-      </div>,
-    );
-  }
-  if (latestBackup && !sched?.lastBackupError) {
-    alerts.push(
-      <div className="alert ok" key="backup-ok">
-        Backup ran {formatAgo(latestBackup.createdAt)} · {formatBytes(Math.round(latestBackup.sizeKb / 1024))}
-      </div>,
-    );
-  }
 
   return (
     <div className="grid">
       <ServerControl onChange={setStatus} />
-      <div className="card span6">
-        <h3>Attention</h3>
-        {alerts.length > 0 ? alerts : metrics === null ? (
-          <div className="muted">Checking…</div>
-        ) : (
-          <div className="alert ok">All clear — server {status.state}, {players?.count ?? 0} players online.</div>
-        )}
+      <div className="card span6 span2rows">
+        <h3>Activity</h3>
+        <div style={{ overflowY: 'auto', minHeight: 120 }}>
+          {activity.length === 0 ? (
+            <div className="muted">No recent activity.</div>
+          ) : (
+            activity.map((a) => (
+              <div className="muted" key={a.id}>
+                {new Date(a.created_at).toLocaleTimeString()} {humanizeActivity(a)}
+              </div>
+            ))
+          )}
+        </div>
       </div>
       <div className="card span6">
         <h3>Server</h3>
@@ -158,18 +115,6 @@ export default function Dashboard({ go }) {
           <tr><td>CPU</td><td className="num">{s ? `${s.cpu.loadPct}%` : '…'}</td></tr>
           <tr><td>World</td><td className="num">{world ? `${world.world} · ${formatBytes(Math.round(world.sizeKb / 1024))}` : '…'}</td></tr>
         </tbody></table>
-      </div>
-      <div className="card span6">
-        <h3>Activity</h3>
-        {activity.length === 0 ? (
-          <div className="muted">No recent activity.</div>
-        ) : (
-          activity.map((a) => (
-            <div className="muted" key={a.id}>
-              {new Date(a.created_at).toLocaleTimeString()} {humanizeActivity(a)}
-            </div>
-          ))
-        )}
       </div>
       <div className="card span12">
         <h3>Live tail</h3>

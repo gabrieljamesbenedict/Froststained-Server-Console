@@ -61,6 +61,7 @@ header.top h2 { margin: 0; font-size: 20px; }
 .span3 { grid-column: span 3; } .span4 { grid-column: span 4; }
 .span6 { grid-column: span 6; } .span8 { grid-column: span 8; }
 .span12 { grid-column: span 12; }
+.span2rows { grid-row: span 2; }
 .stat b { font-size: 22px; display: block; }
 .stat span { font-size: 11px; color: var(--muted); text-transform: uppercase;
   letter-spacing: .06em; }
@@ -138,6 +139,7 @@ tbody tr:hover { background: var(--border); }
 .toast.err { border-left-color: var(--stain); }
 @media (max-width: 900px) {
   .span3, .span4, .span6, .span8 { grid-column: span 12; }
+  .span2rows { grid-row: auto; }
   aside { width: 60px; }
   aside h1, aside .foot, aside button span, #master span { display: none; }
   aside button { text-align: center; }
