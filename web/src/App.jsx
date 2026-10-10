@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 
-async function api(path, options) {
-  const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options });
+async function api(path, options = {}) {
+  const { body, ...rest } = options;
+  const init = { ...rest };
+  if (body !== undefined) {
+    // Only claim JSON when a body exists: Fastify 400s empty bodies sent
+    // with Content-Type: application/json (broke all bodyless POSTs).
+    init.headers = { 'Content-Type': 'application/json', ...rest.headers };
+    init.body = typeof body === 'string' ? body : JSON.stringify(body);
+  }
+  const res = await fetch(path, init);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `request failed (${res.status})`);
   return data;
