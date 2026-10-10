@@ -51,8 +51,10 @@ export async function processTree(rootPid, { threads = true } = {}) {
 
   const children = new Map();
   for (const p of list) {
-    if (!children.has(p.ppid)) children.set(p.ppid, []);
-    children.get(p.ppid).push(p.pid);
+    // systeminformation v5 uses parentPid; older shapes used ppid.
+    const ppid = p.parentPid ?? p.ppid;
+    if (!children.has(ppid)) children.set(ppid, []);
+    children.get(ppid).push(p.pid);
   }
   const tree = [];
   const stack = [rootPid];
