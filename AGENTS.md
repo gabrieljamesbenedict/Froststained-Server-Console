@@ -52,6 +52,8 @@ instance (2 servers = 2 console copies on different ports via `--port/--config`)
   approval before committing
 
 ## Notes
+- Architecture/module map: see `docs/architecture.md` before exploring the
+  codebase — it documents every route, service, view, and how they connect
 - PowerShell environment: use `curl.exe`, not `Invoke-WebRequest`
   (fails in NonInteractive mode). No `tail`; use `Select-Object -Last N`.
 - Never commit secrets (`config.yml`, `data.db`, `curseforge_api_key`).
