@@ -107,7 +107,7 @@ tbody tr:hover { background: var(--border); }
 .menu button { display: block; width: 100%; border: none; text-align: left; background: none; }
 .menu button:hover { background: var(--border); }
 .modalback { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none;
-  align-items: center; justify-content: center; z-index: 30; }
+  align-items: center; justify-content: center; z-index: 1000; }
 .modalback.open { display: flex; }
 .modal { width: min(760px, 92vw); max-height: 86vh; overflow-y: auto; }
 .rail { display: flex; gap: 16px; }
