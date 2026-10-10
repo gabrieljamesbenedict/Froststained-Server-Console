@@ -97,6 +97,9 @@
     font-size: 12px; line-height: 24px; color: var(--muted); }
   .view { display: none; } .view.active { display: block; }
   #v-console.active { display: flex; flex-direction: column; flex: 1; }
+  #v-mods.active { display: flex; flex-direction: column; flex: 1; }
+  #v-mods .card.fill { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  #v-mods .scroll { overflow-y: auto; min-height: 200px; }
   #v-console .card.fill { display: flex; flex-direction: column; flex: 1; }
   #logfull { flex: 1; min-height: 300px; }
   .cmdrow { align-items: stretch; }
@@ -255,17 +258,17 @@
   </section>
 
   <section class="view" id="v-mods">
-    <div class="card"><h3>Mods (86 installed)</h3>
-      <div class="rail"><div class="grow">
-        <table><thead><tr><th>Enable</th><th></th><th>Name</th><th>Version</th><th>Last modified</th><th>Provider</th></tr></thead>
+    <div class="card fill"><h3>Mods (86 installed)</h3>
+      <div class="rail" style="flex:1;min-height:0"><div class="grow" style="display:flex;flex-direction:column;min-height:0">
+        <div class="scroll"><table style="table-layout:fixed"><colgroup><col style="width:64px" /><col /><col style="width:120px" /><col style="width:150px" /><col style="width:110px" /></colgroup><thead><tr><th>Enable</th><th>Name</th><th>Version</th><th>Last modified</th><th>Provider</th></tr></thead>
         <tbody>
-          <tr><td><input type="checkbox" checked /></td><td><span class="icon">▦</span></td>
-            <td>Architectury</td><td class="num">13.0.11</td><td class="num">8/29 4:20 PM</td><td>Modrinth</td></tr>
-          <tr><td><input type="checkbox" checked /></td><td><span class="icon">▦</span></td>
-            <td>Create</td><td class="num">6.0.5</td><td class="num">8/29 4:19 PM</td><td>Modrinth</td></tr>
-          <tr><td><input type="checkbox" /></td><td><span class="icon">▦</span></td>
-            <td>Aerowear</td><td class="num">1.0.0</td><td class="num">8/29 3:52 PM</td><td>—</td></tr>
-        </tbody></table>
+          <tr><td><input type="checkbox" checked /></td>
+            <td>Architectury<br /><span class="muted num">architectury-13.0.11-neoforge.jar</span></td><td class="num">13.0.11</td><td class="num">8/29 4:20 PM</td><td>Modrinth</td></tr>
+          <tr><td><input type="checkbox" checked /></td>
+            <td>Create<br /><span class="muted num">create-neoforge-6.0.5.jar</span></td><td class="num">6.0.5</td><td class="num">8/29 4:19 PM</td><td>Modrinth <span class="badge upd">1 update</span></td></tr>
+          <tr><td><input type="checkbox" /></td>
+            <td>Aerowear<br /><span class="muted num">aerowear-1.0.0.jar</span></td><td class="num">1.0.0</td><td class="num">8/29 3:52 PM</td><td>—</td></tr>
+        </tbody></table></div>
         <input class="search" placeholder="Search" />
       </div><div class="side">
         <button onclick="toast('Download mods','Modrinth and CurseForge search (mock)')">Download Mods</button>
