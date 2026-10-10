@@ -48,6 +48,30 @@ export default function Mods() {
     }
   };
 
+  const setSelectedEnabled = async (enable) => {
+    if (selected.size === 0) {
+      toast('Nothing selected', 'Click a row to select it first', 'err');
+      return;
+    }
+    const targets = (mods?.mods ?? []).filter((m) => selected.has(m.file) && m.enabled !== enable);
+    if (targets.length === 0) {
+      toast(enable ? 'Already enabled' : 'Already disabled', 'Selected mods are already in that state', 'err');
+      return;
+    }
+    let failed = 0;
+    for (const m of targets) {
+      try {
+        await api(`/api/mods/${encodeURIComponent(m.file)}/${enable ? 'enable' : 'disable'}`, { method: 'POST' });
+      } catch {
+        failed += 1;
+      }
+    }
+    if (failed) toast(enable ? 'Enable' : 'Disable', `${failed} of ${targets.length} failed`, 'err');
+    else toast(enable ? 'Enabled' : 'Disabled', `${targets.length} mod(s)`, 'ok');
+    setDirty(true);
+    refresh();
+  };
+
   const upload = async (e) => {
     const file = e.target.files[0];
     e.target.value = '';
@@ -102,6 +126,10 @@ export default function Mods() {
     if (!q) return true;
     return m.name.toLowerCase().includes(q) || m.file.toLowerCase().includes(q);
   });
+
+  const selectedMods = (mods?.mods ?? []).filter((m) => selected.has(m.file));
+  const toEnable = selectedMods.filter((m) => !m.enabled).length;
+  const toDisable = selectedMods.filter((m) => m.enabled).length;
 
   if (!mods) return <div className="card"><h3>Mods</h3><p className="muted">Loading…</p></div>;
 
@@ -159,6 +187,8 @@ export default function Mods() {
         <div className="side">
           <button onClick={() => fileRef.current?.click()}>Add File</button>
           <input ref={fileRef} type="file" accept=".jar" style={{ display: 'none' }} onChange={upload} />
+          <button onClick={() => setSelectedEnabled(true)} disabled={toEnable === 0}>Enable{toEnable ? ` (${toEnable})` : ''}</button>
+          <button onClick={() => setSelectedEnabled(false)} disabled={toDisable === 0}>Disable{toDisable ? ` (${toDisable})` : ''}</button>
           <button className="danger" onClick={removeSelected}>Remove{selected.size ? ` (${selected.size})` : ''}</button>
         </div>
       </div>
