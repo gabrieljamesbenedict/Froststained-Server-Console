@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { api, toast } from './api.js';
-import { AuthForm, Backups, MetricsView, Mods, PasswordForm, Players } from './views/legacy.jsx';
+import { AuthForm, Backups, Mods, PasswordForm, Players } from './views/legacy.jsx';
 import Console from './views/Console.jsx';
+import Metrics from './views/Metrics.jsx';
 import Dashboard from './views/Dashboard.jsx';
 
 const TITLES = {
@@ -206,7 +207,7 @@ export default function App() {
   const views = {
     dash: <Dashboard go={setView} />,
     console: <Console />,
-    metrics: <MetricsView />,
+    metrics: <Metrics />,
     players: <Players />,
     mods: <Mods />,
     files: <FilesPlaceholder />,
