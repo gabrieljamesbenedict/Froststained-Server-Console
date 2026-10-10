@@ -94,7 +94,7 @@ export default function Dashboard({ go }) {
       <ServerControl onChange={setStatus} />
       <div className="card span6 span2rows">
         <h3>Activity</h3>
-        <div style={{ overflowY: 'auto', minHeight: 120 }}>
+        <div style={{ overflowY: 'auto', minHeight: 120, maxHeight: 300 }}>
           {activity.length === 0 ? (
             <div className="muted">No recent activity.</div>
           ) : (
