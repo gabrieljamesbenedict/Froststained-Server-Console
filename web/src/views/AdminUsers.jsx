@@ -59,29 +59,6 @@ export default function AdminUsers({ currentUserId }) {
     }
   };
 
-  const handlePasswordChange = async (e, userId) => {
-    e.preventDefault();
-    const form = e.target;
-    const password = form.password.value;
-    const confirm = form.confirm.value;
-    if (password !== confirm) {
-      toast('Mismatch', 'Passwords do not match', 'err');
-      return;
-    }
-    if (password.length < 8) {
-      toast('Too short', 'Password must be at least 8 characters', 'err');
-      return;
-    }
-    try {
-      await adminUsersApi.update(userId, { password });
-      toast('Password changed', 'Other sessions signed out', 'ok');
-      setModal(null);
-      refresh();
-    } catch (err) {
-      toast('Change failed', err.message, 'err');
-    }
-  };
-
   const handleRoleChange = async (userId, newRole) => {
     try {
       await adminUsersApi.update(userId, { role: newRole });
@@ -164,9 +141,6 @@ export default function AdminUsers({ currentUserId }) {
         <div className="menu open" ref={menuRef} style={{ top: menu.top, left: menu.left }}>
           {!isSelf(menu.user.id) && (
             <>
-              <button onClick={() => setModal({ type: 'password', user: menu.user })}>
-                Change password
-              </button>
               <button onClick={() => setModal({ type: 'role', user: menu.user })}>
                 Change role
               </button>
@@ -205,19 +179,6 @@ export default function AdminUsers({ currentUserId }) {
                   <div className="row" style={{ justifyContent: 'flex-end', marginTop: 8 }}>
                     <button type="button" onClick={() => setModal(null)}>Cancel</button>
                     <button type="submit" className="primary">Create</button>
-                  </div>
-                </form>
-              </>
-            )}
-            {modal.type === 'password' && (
-              <>
-                <h3>Change password for {modal.user.username}</h3>
-                <form onSubmit={(e) => handlePasswordChange(e, modal.user.id)} style={{ display: 'grid', gap: 8, minWidth: 280 }}>
-                  <input name="password" type="password" placeholder="New password (8+ chars)" autoComplete="new-password" required minLength={8} />
-                  <input name="confirm" type="password" placeholder="Confirm new password" autoComplete="new-password" required />
-                  <div className="row" style={{ justifyContent: 'flex-end', marginTop: 8 }}>
-                    <button type="button" onClick={() => setModal(null)}>Cancel</button>
-                    <button type="submit" className="primary">Change</button>
                   </div>
                 </form>
               </>

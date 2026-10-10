@@ -17,6 +17,19 @@ export default async function adminUsersRoutes(app) {
     }
   };
 
+  // Viewer guard: require authentication (admin or viewer)
+  const requireAuth = async (req, reply) => {
+    await app.requireAuth(req, reply);
+  };
+
+  // Admin-only guard for sensitive operations
+  const requireAdminForWrite = async (req, reply) => {
+    await app.requireAuth(req, reply);
+    if (req.user?.role !== 'admin') {
+      return reply.code(403).send({ error: 'admin role required for this action' });
+    }
+  };
+
   // GET /api/admin/users — list all users
   app.get('/api/admin/users', { preHandler: requireAdmin }, async (req) => {
     const users = db
@@ -55,10 +68,10 @@ export default async function adminUsersRoutes(app) {
     return { id: userId, username, role, created_at: Date.now() };
   });
 
-  // PATCH /api/admin/users/:id — update user
+  // PATCH /api/admin/users/:id — update user (role only; password changes via /api/auth/password)
   app.patch('/api/admin/users/:id', { preHandler: requireAdmin }, async (req, reply) => {
     const targetId = Number(req.params.id);
-    const { password, role } = req.body ?? {};
+    const { role } = req.body ?? {};
 
     if (isNaN(targetId)) {
       return reply.code(400).send({ error: 'invalid user id' });
@@ -74,25 +87,6 @@ export default async function adminUsersRoutes(app) {
       return reply.code(403).send({ error: 'cannot change your own role' });
     }
 
-    if (password !== undefined) {
-      if (typeof password !== 'string' || password.length < 8 || password.length > 128) {
-        return reply.code(400).send({ error: 'password must be 8-128 characters' });
-      }
-      const hash = await bcrypt.hash(password, BCRYPT_COST);
-      db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, targetId);
-
-      // Invalidate other sessions (keep current session if it's the target user)
-      const currentToken = req.cookies?.froststained_session;
-      const currentHash = currentToken
-        ? crypto.createHash('sha256').update(currentToken).digest('hex')
-        : null;
-      if (currentHash) {
-        db.prepare('DELETE FROM sessions WHERE user_id = ? AND token_hash != ?').run(targetId, currentHash);
-      } else {
-        db.prepare('DELETE FROM sessions WHERE user_id = ?').run(targetId);
-      }
-    }
-
     if (role !== undefined) {
       if (!VALID_ROLES.includes(role)) {
         return reply.code(400).send({ error: 'role must be "admin" or "viewer"' });
@@ -105,7 +99,6 @@ export default async function adminUsersRoutes(app) {
     const updated = db.prepare('SELECT id, username, role, created_at FROM users WHERE id = ?').get(targetId);
 
     const details = [];
-    if (password !== undefined) details.push('password changed');
     if (role !== undefined && target.role !== role) details.push(`role changed from "${target.role}" to "${role}"`);
     audit(db, req.user.id, 'admin.user.update', `updated user "${target.username}": ${details.join(', ') || 'no changes'}`);
 

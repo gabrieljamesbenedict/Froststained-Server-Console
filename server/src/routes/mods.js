@@ -61,14 +61,22 @@ function detectLoader(serverPath) {
   return top?.[0] ?? null;
 }
 
-export default async function modsRoutes(app) {
+// Admin-only guard for mod mutations
+  const requireAdmin = async (req, reply) => {
+    await app.requireAuth(req, reply);
+    if (req.user?.role !== 'admin') {
+      return reply.code(403).send({ error: 'admin role required' });
+    }
+  };
+
+  export default async function modsRoutes(app) {
   await app.register(import('@fastify/multipart'), {
     limits: { fileSize: MAX_UPLOAD_MB * 1024 * 1024, files: 1 },
   });
 
   app.get('/api/mods', { preHandler: app.requireAuth }, async () => listMods(app.config.serverPath));
 
-  app.post('/api/mods/upload', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.post('/api/mods/upload', { preHandler: requireAdmin }, async (req, reply) => {
     const dir = modsDir(app.config.serverPath);
     fs.mkdirSync(dir, { recursive: true });
     const part = await req.file();
@@ -89,7 +97,7 @@ export default async function modsRoutes(app) {
     return info;
   });
 
-  app.post('/api/mods/:file/enable', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.post('/api/mods/:file/enable', { preHandler: requireAdmin }, async (req, reply) => {
     try {
       const { base, full } = resolveModFile(app.config.serverPath, req.params.file);
       if (!base.endsWith('.jar.disabled')) {
@@ -109,7 +117,7 @@ export default async function modsRoutes(app) {
     }
   });
 
-  app.post('/api/mods/:file/disable', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.post('/api/mods/:file/disable', { preHandler: requireAdmin }, async (req, reply) => {
     try {
       const { base, full } = resolveModFile(app.config.serverPath, req.params.file);
       if (base.endsWith('.jar.disabled')) {
@@ -124,7 +132,7 @@ export default async function modsRoutes(app) {
     }
   });
 
-  app.delete('/api/mods/:file', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.delete('/api/mods/:file', { preHandler: requireAdmin }, async (req, reply) => {
     try {
       const { base, full } = resolveModFile(app.config.serverPath, req.params.file);
       fs.rmSync(full);
@@ -180,7 +188,7 @@ export default async function modsRoutes(app) {
 
   // Install one version file straight into mods/. Overwrites the same
   // filename (normal for updates); validates the jar before keeping it.
-  app.post('/api/mods/install', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.post('/api/mods/install', { preHandler: requireAdmin }, async (req, reply) => {
     const fail = (err) => reply.code(errToStatus(err)).send({ error: err.message });
     try {
       const source = (req.body?.source ?? '').toLowerCase();
