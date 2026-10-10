@@ -9,9 +9,21 @@ const TITLES = {
   metrics: 'Metrics',
   players: 'Players',
   mods: 'Mods',
+  files: 'Server files',
   backups: 'Backups',
   settings: 'Settings',
   account: 'Account',
+};
+
+const NAV = {
+  dash: 'Dashboard',
+  console: 'Console',
+  metrics: 'Metrics',
+  players: 'Players',
+  mods: 'Mods',
+  files: 'Files',
+  backups: 'Backups',
+  settings: 'Settings',
 };
 
 function useTheme() {
@@ -79,7 +91,13 @@ function MasterPower({ user }) {
     }
   };
 
-  if (running === null) return null;
+  if (running === null) {
+    return (
+      <button id="master" disabled>
+        <span>… checking</span>
+      </button>
+    );
+  }
   return (
     <button id="master" className={running ? 'stop' : 'start'} onClick={toggle}>
       <span>{running ? '■ Stop server' : '▶ Start server'}</span>
@@ -87,7 +105,7 @@ function MasterPower({ user }) {
   );
 }
 
-function SettingsView() {
+function SettingsView({ theme, setTheme }) {
   const [health, setHealth] = useState(null);
   useEffect(() => {
     api('/api/health').then(setHealth).catch(() => {});
@@ -99,10 +117,25 @@ function SettingsView() {
         <p>Backend: <code>{health ? `${health.service} ok` : '…'}</code></p>
       </div>
       <div className="card">
+        <h3>Appearance</h3>
+        <button onClick={() => setTheme('dark')}>Frost Dark</button>{' '}
+        <button onClick={() => setTheme('light')}>Frost Light</button>
+        <p className="muted">Current: {theme === 'dark' ? 'Frost Dark' : 'Frost Light'}</p>
+      </div>
+      <div className="card">
         <h3>Mod sources</h3>
         <p className="muted">Modrinth needs no key. Set <code>curseforge_api_key</code> in console config for CurseForge checks.</p>
       </div>
     </>
+  );
+}
+
+function FilesPlaceholder() {
+  return (
+    <div className="card">
+      <h3>Server files</h3>
+      <p className="muted">File browser (browse, view, edit, upload) lands with its backend slice — PLAN Phase 5.</p>
+    </div>
   );
 }
 
@@ -175,8 +208,9 @@ export default function App() {
     metrics: <MetricsView />,
     players: <Players />,
     mods: <Mods />,
+    files: <FilesPlaceholder />,
     backups: <Backups />,
-    settings: <SettingsView />,
+    settings: <SettingsView theme={theme} setTheme={setTheme} />,
     account: <AccountView user={state.user} onLogout={logout} />,
   };
 
@@ -185,9 +219,9 @@ export default function App() {
       <aside>
         <h1><span className="frost">FROST</span><span className="stained">STAINED</span></h1>
         <MasterPower user={state.user} />
-        {['dash', 'console', 'metrics', 'players', 'mods', 'backups', 'settings'].map((v) => (
+        {Object.keys(NAV).map((v) => (
           <button key={v} className={`nav${view === v ? ' active' : ''}`} onClick={() => setView(v)}>
-            <span>{TITLES[v]}</span>
+            <span>{NAV[v]}</span>
           </button>
         ))}
         <button className={`nav acct${view === 'account' ? ' active' : ''}`} onClick={() => setView('account')}>
@@ -203,7 +237,7 @@ export default function App() {
             {theme === 'dark' ? '☾ theme' : '☀ theme'}
           </button>
         </header>
-        <section className="view active">{views[view]}</section>
+        <section className="view active" id={`v-${view}`}>{views[view]}</section>
         <Toasts />
       </main>
     </>
