@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, formatAgo, formatBytes, toast } from '../api.js';
+import { api, formatAgo, formatBytes, humanizeActivity, logClass, toast } from '../api.js';
 
 function usePoll(fn, ms, deps = []) {
   useEffect(() => {
@@ -65,6 +65,11 @@ export default function Dashboard({ go }) {
   const [metrics, setMetrics] = useState(null);
   const [tail, setTail] = useState([]);
   const [activity, setActivity] = useState([]);
+  const [sched, setSched] = useState(null);
+  const [backups, setBackups] = useState(null);
+  const [world, setWorld] = useState(null);
+  // Filled by the Mods view (Phase 6) after an update check; null hides the alert.
+  const [modUpdates] = useState(null);
 
   usePoll(async (alive) => {
     const m = await api('/api/metrics');
@@ -81,16 +86,52 @@ export default function Dashboard({ go }) {
     if (alive) setActivity(a.entries);
   }, 15000);
 
+  usePoll(async (alive) => {
+    const [sc, b] = await Promise.all([api('/api/schedule'), api('/api/backups')]);
+    if (alive) {
+      setSched(sc);
+      setBackups(b);
+    }
+  }, 30000);
+
+  usePoll(async (alive) => {
+    const w = await api('/api/server/world').catch(() => null);
+    if (alive) setWorld(w);
+  }, 60000);
+
   const s = metrics?.system?.latest;
   const players = metrics?.server?.players;
+  const latestBackup = backups?.backups?.[0];
+
+  const alerts = [];
+  if (status.state === 'stopped') {
+    alerts.push(<div className="alert" key="stopped">Server is stopped.</div>);
+  }
+  if (sched?.lastBackupError) {
+    alerts.push(<div className="alert err" key="backup-err">Last scheduled backup failed: {sched.lastBackupError}</div>);
+  }
+  if (modUpdates?.count > 0) {
+    alerts.push(
+      <div className="alert" key="mods">
+        {modUpdates.summary}{' '}
+        <a href="#" onClick={(e) => { e.preventDefault(); go('mods'); }} style={{ color: 'var(--accent)' }}>Review</a>
+      </div>,
+    );
+  }
+  if (latestBackup && !sched?.lastBackupError) {
+    alerts.push(
+      <div className="alert ok" key="backup-ok">
+        Backup ran {formatAgo(latestBackup.createdAt)} · {formatBytes(Math.round(latestBackup.sizeKb / 1024))}
+      </div>,
+    );
+  }
 
   return (
     <div className="grid">
       <ServerControl onChange={setStatus} />
       <div className="card span6">
         <h3>Attention</h3>
-        {status.state === 'stopped' && <div className="alert">Server is stopped.</div>}
-        {metrics === null ? (
+        {alerts.length > 0 ? alerts : metrics === null ? (
           <div className="muted">Checking…</div>
         ) : (
           <div className="alert ok">All clear — server {status.state}, {players?.count ?? 0} players online.</div>
@@ -103,6 +144,7 @@ export default function Dashboard({ go }) {
           <tr><td>Players</td><td className="num">{players?.count ?? '…'}</td></tr>
           <tr><td>RAM</td><td className="num">{s ? `${formatBytes(s.mem.usedMb)} / ${formatBytes(s.mem.totalMb)}` : '…'}</td></tr>
           <tr><td>CPU</td><td className="num">{s ? `${s.cpu.loadPct}%` : '…'}</td></tr>
+          <tr><td>World</td><td className="num">{world ? `${world.world} · ${formatBytes(Math.round(world.sizeKb / 1024))}` : '…'}</td></tr>
         </tbody></table>
       </div>
       <div className="card span6">
@@ -112,8 +154,7 @@ export default function Dashboard({ go }) {
         ) : (
           activity.map((a) => (
             <div className="muted" key={a.id}>
-              {new Date(a.created_at).toLocaleTimeString()} {a.username ?? 'system'} {a.action}
-              {a.detail ? ` — ${a.detail}` : ''} · {formatAgo(a.created_at)}
+              {new Date(a.created_at).toLocaleTimeString()} {humanizeActivity(a)}
             </div>
           ))
         )}
@@ -122,7 +163,7 @@ export default function Dashboard({ go }) {
         <h3>Live tail</h3>
         <div className="term" id="logtail">
           {tail.map((l, i) => (
-            <div key={i}>{l.line}</div>
+            <div key={i} className={logClass(l.line) || undefined}>{l.line}</div>
           ))}
         </div>
         <p className="muted"><a href="#" onClick={(e) => { e.preventDefault(); go('console'); }} style={{ color: 'var(--accent)' }}>Open full console</a></p>
