@@ -17,12 +17,11 @@ function usePoll(fn, ms, deps = []) {
       alive = false;
       clearInterval(t);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 }
 
 export function ServerControl({ onChange }) {
-  const [status, setStatus] = useState({ state: 'unknown' });
+  const [, setStatus] = useState({ state: 'unknown' });
 
   usePoll(async (alive) => {
     const s = await api('/api/server/status');
