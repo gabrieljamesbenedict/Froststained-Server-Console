@@ -127,8 +127,8 @@ export default function Mods() {
           <div className="scroll">
             <table style={{ tableLayout: 'fixed' }}>
               <colgroup>
-                <col style={{ width: 64 }} /><col /><col style={{ width: 110 }} />
-                <col style={{ width: 130 }} /><col style={{ width: 90 }} />
+                <col style={{ width: 64 }} /><col /><col style={{ width: 130 }} />
+                <col style={{ width: 150 }} /><col style={{ width: 110 }} />
               </colgroup>
               <thead>
                 <tr><th>Enable</th><th>Name</th><th>Version</th><th>Last modified</th><th>Loader</th></tr>
