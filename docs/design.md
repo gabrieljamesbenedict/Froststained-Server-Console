@@ -1,6 +1,6 @@
 # Froststained UI design decisions
 
-Locked in with Gabriel; apply to the mockup first, then the real frontend.
+Locked in with Gabriel; the real frontend is the source of truth.
 
 ## Fonts (Monaspace everywhere, via Google Fonts, monospace fallback)
 
@@ -12,7 +12,7 @@ Locked in with Gabriel; apply to the mockup first, then the real frontend.
 
 ## Colors
 
-Frost dark default, frost light alternate (see mockup CSS variables).
+Frost dark default, frost light alternate (see CSS variables in `web/src/index.css`).
 Red accents carry the "stained" half of the identity:
 
 - Primary accent stays frost blue (`#58a6ff` dark / `#0969da` light): links, actions, RCON lines, focus.

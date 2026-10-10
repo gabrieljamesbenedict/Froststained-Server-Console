@@ -31,9 +31,7 @@ Second instance: `node server/src/index.js --port 3101` with separate config.
 server/src/  backend (config, routes, services: process, metrics, mods, auth)
 web/src/     React SPA (built to web/dist/, embedded in exe)
 data/        runtime SQLite (gitignored)
-backups/     world backups (gitignored)
 docs/        specs and decisions
-scripts/     packaging/service install helpers
 ```
 
 ## License
