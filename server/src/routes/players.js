@@ -1,4 +1,5 @@
 import { audit } from '../db.js';
+import { allPlayers } from '../services/playerStats.js';
 
 const NAME_RE = /^\w{3,16}$/;
 // RCON takes one command line; strip CR/LF so reason/message can't smuggle a second command.
@@ -41,6 +42,8 @@ export default async function playersRoutes(app) {
     ...app.players.snapshot(),
     rconConfigured: app.rcon.configured,
   }));
+
+  app.get('/api/players/all', { preHandler: app.requireAuth }, async () => allPlayers(app.config.serverPath));
 
   app.post('/api/players/kick', { preHandler: app.requireAuth }, async (req, reply) => {
     try {
