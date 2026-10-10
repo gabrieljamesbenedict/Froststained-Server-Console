@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { api, toast } from './api.js';
-import { AuthForm, Backups, Mods, PasswordForm } from './views/legacy.jsx';
+import { AuthForm, Backups, PasswordForm } from './views/legacy.jsx';
 import Console from './views/Console.jsx';
 import Metrics from './views/Metrics.jsx';
 import Players from './views/Players.jsx';
 import Files from './views/Files.jsx';
+import Mods from './views/Mods.jsx';
 import Dashboard from './views/Dashboard.jsx';
 
 const TITLES = {
