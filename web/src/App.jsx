@@ -267,8 +267,15 @@ function Players() {
   const refresh = async () => {
     try {
       setPlayers(await api('/api/players'));
-      setRcon(await api('/api/rcon/status'));
       setError('');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const refreshRcon = async () => {
+    try {
+      setRcon(await api('/api/rcon/status'));
     } catch (err) {
       setError(err.message);
     }
@@ -276,6 +283,7 @@ function Players() {
 
   useEffect(() => {
     refresh();
+    refreshRcon();
     const t = setInterval(refresh, 10000);
     return () => clearInterval(t);
   }, []);
@@ -302,6 +310,11 @@ function Players() {
       <h2>Players ({players.count} online)</h2>
       {rcon && !rcon.configured && (
         <p>RCON not configured: set <code>rcon.password</code> and <code>enable-rcon=true</code> on the MC server.</p>
+      )}
+      {rcon?.configured && (
+        <p style={{ fontSize: 12 }}>
+          RCON {rcon.reachable ? 'reachable' : 'unreachable'} <button onClick={refreshRcon}>Recheck</button>
+        </p>
       )}
       {players.players.length > 0 && (
         <ul>
