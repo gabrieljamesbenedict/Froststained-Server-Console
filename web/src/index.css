@@ -109,7 +109,8 @@ tbody tr:hover { background: var(--border); }
 .modalback { position: fixed; inset: 0; background: rgba(0,0,0,.55);
   align-items: center; justify-content: center; z-index: 1000; }
 .modal { width: min(760px, 92vw); max-height: 86vh; overflow-y: auto;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px;
+  margin: auto; }
 .rail { display: flex; gap: 16px; }
 .rail > .grow { flex: 1; min-width: 0; }
 .rail > .side { width: 190px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; }

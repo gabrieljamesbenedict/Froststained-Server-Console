@@ -12,9 +12,16 @@ function errToStatus(err) {
 export default async function backupsRoutes(app) {
   const dir = () => app.config.backupDir;
 
+  const requireAdmin = async (req, reply) => {
+    await app.requireAuth(req, reply);
+    if (req.user?.role !== 'admin') {
+      return reply.code(403).send({ error: 'admin role required' });
+    }
+  };
+
   app.get('/api/backups', { preHandler: app.requireAuth }, async () => listBackups(dir()));
 
-  app.post('/api/backups', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.post('/api/backups', { preHandler: requireAdmin }, async (req, reply) => {
     try {
       const info = await createBackup({
         serverPath: app.config.serverPath,
@@ -40,7 +47,7 @@ export default async function backupsRoutes(app) {
     }
   });
 
-  app.delete('/api/backups/:file', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.delete('/api/backups/:file', { preHandler: requireAdmin }, async (req, reply) => {
     try {
       const { base, full } = resolveBackupFile(dir(), req.params.file);
       fs.rmSync(full);
@@ -51,7 +58,7 @@ export default async function backupsRoutes(app) {
     }
   });
 
-  app.post('/api/backups/:file/restore', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.post('/api/backups/:file/restore', { preHandler: requireAdmin }, async (req, reply) => {
     try {
       const info = await restoreBackup({
         serverPath: app.config.serverPath,

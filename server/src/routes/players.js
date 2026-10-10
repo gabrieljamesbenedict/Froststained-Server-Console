@@ -21,6 +21,13 @@ export default async function playersRoutes(app) {
     return name;
   };
 
+  const requireAdmin = async (req, reply) => {
+    await app.requireAuth(req, reply);
+    if (req.user?.role !== 'admin') {
+      return reply.code(403).send({ error: 'admin role required' });
+    }
+  };
+
   const run = async (req, reply, label, command) => {
     try {
       const response = await app.rcon.send(command);
@@ -35,7 +42,7 @@ export default async function playersRoutes(app) {
 
   app.get('/api/players/all', { preHandler: app.requireAuth }, async () => allPlayers(app.config.serverPath));
 
-  app.post('/api/players/kick', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.post('/api/players/kick', { preHandler: requireAdmin }, async (req, reply) => {
     try {
       const name = checkName(req.body?.name);
       const reason = oneLine(req.body?.reason ?? '');
@@ -45,7 +52,7 @@ export default async function playersRoutes(app) {
     }
   });
 
-  app.post('/api/players/ban', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.post('/api/players/ban', { preHandler: requireAdmin }, async (req, reply) => {
     try {
       const name = checkName(req.body?.name);
       const reason = oneLine(req.body?.reason ?? '');
@@ -56,7 +63,7 @@ export default async function playersRoutes(app) {
   });
 
   for (const [route, cmd] of [['pardon', 'pardon'], ['op', 'op'], ['deop', 'deop']]) {
-    app.post(`/api/players/${route}`, { preHandler: app.requireAuth }, async (req, reply) => {
+    app.post(`/api/players/${route}`, { preHandler: requireAdmin }, async (req, reply) => {
       try {
         const name = checkName(req.body?.name);
         return run(req, reply, route, `${cmd} ${name}`);
@@ -66,7 +73,7 @@ export default async function playersRoutes(app) {
     });
   }
 
-  app.post('/api/players/whitelist-add', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.post('/api/players/whitelist-add', { preHandler: requireAdmin }, async (req, reply) => {
     try {
       const name = checkName(req.body?.name);
       return run(req, reply, 'whitelist-add', `whitelist add ${name}`);
@@ -75,7 +82,7 @@ export default async function playersRoutes(app) {
     }
   });
 
-  app.post('/api/players/whitelist-remove', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.post('/api/players/whitelist-remove', { preHandler: requireAdmin }, async (req, reply) => {
     try {
       const name = checkName(req.body?.name);
       return run(req, reply, 'whitelist-remove', `whitelist remove ${name}`);

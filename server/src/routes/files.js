@@ -19,6 +19,13 @@ export default async function filesRoutes(app) {
 
   const root = () => app.config.serverPath;
 
+  const requireAdmin = async (req, reply) => {
+    await app.requireAuth(req, reply);
+    if (req.user?.role !== 'admin') {
+      return reply.code(403).send({ error: 'admin role required' });
+    }
+  };
+
   app.get('/api/files', { preHandler: app.requireAuth }, async (req, reply) => {
     try {
       return listDir(root(), req.query.path ?? '');
@@ -35,7 +42,7 @@ export default async function filesRoutes(app) {
     }
   });
 
-  app.put('/api/files/content', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.put('/api/files/content', { preHandler: requireAdmin }, async (req, reply) => {
     try {
       const info = writeTextFile(root(), req.body?.path, req.body?.content);
       audit(app.db, req.user.id, 'file.write', `${info.path} (backup: ${info.backup})`);
@@ -45,7 +52,7 @@ export default async function filesRoutes(app) {
     }
   });
 
-  app.post('/api/files/rename', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.post('/api/files/rename', { preHandler: requireAdmin }, async (req, reply) => {
     try {
       const info = renameEntry(root(), req.body?.from, req.body?.to);
       audit(app.db, req.user.id, 'file.rename', `${info.from} -> ${info.to}`);
@@ -69,7 +76,7 @@ export default async function filesRoutes(app) {
     }
   });
 
-  app.post('/api/files/upload', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.post('/api/files/upload', { preHandler: requireAdmin }, async (req, reply) => {
     try {
       const { full: dir } = resolveServerPath(root(), req.query.path ?? '');
       if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
