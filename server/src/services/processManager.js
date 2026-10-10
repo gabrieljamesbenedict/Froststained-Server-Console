@@ -24,7 +24,7 @@ function killTree(pid) {
   });
 }
 
-export function readServerPort(serverPath) {
+function readServerPort(serverPath) {
   try {
     const props = fs.readFileSync(path.join(serverPath, 'server.properties'), 'utf8');
     for (const line of props.split(/\r?\n/)) {

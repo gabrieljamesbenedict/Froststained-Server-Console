@@ -2,12 +2,12 @@ import { audit } from '../db.js';
 import { allPlayers } from '../services/playerStats.js';
 
 const NAME_RE = /^\w{3,16}$/;
-// RCON takes one command line; strip CR/LF so reason/message can't smuggle a second command.
+// RCON takes one command line; strip CR/LF so reason can't smuggle a second command.
 const oneLine = (s) => String(s).replace(/[\r\n]+/g, ' ').trim();
 
 function errToStatus(err) {
   if (err.code === 'RCON_NOT_CONFIGURED') return 503;
-  if (err.code === 'BAD_NAME' || err.code === 'BAD_MESSAGE') return 400;
+  if (err.code === 'BAD_NAME') return 400;
   return 502;
 }
 
@@ -31,17 +31,7 @@ export default async function playersRoutes(app) {
     }
   };
 
-  app.get('/api/rcon/status', { preHandler: app.requireAuth }, async () => ({
-    configured: app.rcon.configured,
-    host: app.rcon.host,
-    port: app.rcon.port,
-    reachable: app.rcon.configured ? await app.rcon.reachable() : false,
-  }));
-
-  app.get('/api/players', { preHandler: app.requireAuth }, async () => ({
-    ...app.players.snapshot(),
-    rconConfigured: app.rcon.configured,
-  }));
+  app.get('/api/players', { preHandler: app.requireAuth }, async () => app.players.snapshot());
 
   app.get('/api/players/all', { preHandler: app.requireAuth }, async () => allPlayers(app.config.serverPath));
 
@@ -89,20 +79,6 @@ export default async function playersRoutes(app) {
     try {
       const name = checkName(req.body?.name);
       return run(req, reply, 'whitelist-remove', `whitelist remove ${name}`);
-    } catch (err) {
-      return reply.code(errToStatus(err)).send({ error: err.message });
-    }
-  });
-
-  app.post('/api/players/say', { preHandler: app.requireAuth }, async (req, reply) => {
-    try {
-      const message = oneLine(req.body?.message ?? '');
-      if (!message || message.length > 256) {
-        const err = new Error('message must be 1-256 characters');
-        err.code = 'BAD_MESSAGE';
-        throw err;
-    }
-      return run(req, reply, 'say', `say ${message}`);
     } catch (err) {
       return reply.code(errToStatus(err)).send({ error: err.message });
     }

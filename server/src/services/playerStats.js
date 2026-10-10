@@ -57,7 +57,6 @@ export function allPlayers(serverPath) {
       playtimeH: Math.round((ticks / 72000) * 10) / 10,
       deaths: Number(stats['minecraft:deaths']) || 0,
       advancements,
-      hasStats: ticks > 0 || (Number(stats['minecraft:deaths']) || 0) > 0,
     };
   });
   players.sort((a, b) => b.playtimeH - a.playtimeH);
