@@ -97,9 +97,9 @@
     font-size: 12px; line-height: 24px; color: var(--muted); }
   .view { display: none; } .view.active { display: block; }
   #v-console.active { display: flex; flex-direction: column; flex: 1; }
-  #v-mods.active { display: flex; flex-direction: column; flex: 1; }
-  #v-mods .card.fill { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-  #v-mods .scroll { overflow-y: auto; min-height: 200px; }
+  #v-mods.active, #v-players.active { display: flex; flex-direction: column; flex: 1; height: calc(100vh - 130px); }
+  #v-mods .card.fill, #v-players .card.fill { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  #v-mods .scroll, #v-players .scroll { flex: 1; overflow-y: auto; min-height: 0; }
   #v-console .card.fill { display: flex; flex-direction: column; flex: 1; }
   #logfull { flex: 1; min-height: 300px; }
   .cmdrow { align-items: stretch; }
@@ -236,18 +236,13 @@
   </section>
 
   <section class="view" id="v-players">
-    <div class="card"><h3>Players</h3>
+    <div class="card fill"><h3>Players</h3>
       <div class="row" style="margin:0 0 8px 0">
         <button class="primary" id="tabon" onclick="ptab('on')">Online · 2</button>
         <button id="taball" onclick="ptab('all')">All · 5</button>
       </div>
-      <table style="table-layout:fixed"><colgroup><col style="width:30%" /><col style="width:18%" /><col style="width:14%" /><col style="width:12%" /><col /></colgroup><thead><tr><th>Player</th><th>Online for</th><th>Playtime</th><th>Deaths</th><th align="right"></th></tr></thead>
-      <tbody id="prows">
-        <tr data-p="Porado" onclick="pdetail('Porado', '1h22m', '36h', '12', true, false)"><td>Porado (Op)<br /><span class="muted num">8f3a…c91d</span></td><td>1h22m</td><td>36h</td><td>12</td>
-          <td align="right" style="position:relative"><button class="pmenu" data-p="Porado">⋯</button></td></tr>
-        <tr data-p="Steve" onclick="pdetail('Steve', '14m', '9h', '3', false, true)"><td>Steve<br /><span class="muted num">b71e…04aa</span></td><td>14m</td><td>9h</td><td>3</td>
-          <td align="right" style="position:relative"><button class="pmenu" data-p="Steve">⋯</button></td></tr>
-      </tbody></table>
+      <div class="scroll"><table style="table-layout:fixed"><colgroup><col style="width:30%" /><col style="width:18%" /><col style="width:14%" /><col style="width:12%" /><col /></colgroup><thead><tr><th>Player</th><th>Online for</th><th>Playtime</th><th>Deaths</th><th align="right"></th></tr></thead>
+      <tbody id="prows"></tbody></table></div>
       <div class="menu" id="pctx">
         <button>Kick</button><button>Ban</button><button>Pardon</button>
         <button>Op</button><button>Deop</button>
@@ -459,14 +454,23 @@ motd=Welcome to Froststained\!</textarea>
   function closeMenu() { menu.classList.remove('open'); }
   menu.querySelectorAll('button').forEach(b => b.onclick = () =>
     toast(b.textContent + ' ' + menuFor, 'RCON confirmed', 'ok'));
-  const onRows = document.getElementById('prows').innerHTML;
-  const allRows = onRows
-    + `<tr><td>Alex<br /><span class="muted num">c44d…9e02</span></td><td>last seen 2d ago</td><td>51h</td><td>22</td>`
-    + `<td align="right" style="position:relative"><button class="pmenu" data-p="Alex">⋯</button></td></tr>`
-    + `<tr><td>Herobrine<br /><span class="muted num">41f8…77b0</span></td><td>last seen 9d ago</td><td>3h</td><td>7</td>`
-    + `<td align="right" style="position:relative"><button class="pmenu" data-p="Herobrine">⋯</button></td></tr>`
-    + `<tr><td>Notch<br /><span class="muted num">069a…5faa</span></td><td>last seen 30d ago</td><td>12h</td><td>1</td>`
-    + `<td align="right" style="position:relative"><button class="pmenu" data-p="Notch">⋯</button></td></tr>`;
+  const row = (name, sub, c2, play, deaths) =>
+    `<tr onclick="pdetail('${name}', '${c2}', '${play}', '${deaths}', ${name === 'Porado'}, false)">`
+    + `<td>${name}${name === 'Porado' ? ' (Op)' : ''}<br /><span class="muted num">${sub}</span></td>`
+    + `<td>${c2}</td><td>${play}</td><td>${deaths}</td>`
+    + `<td align="right" style="position:relative"><button class="pmenu" data-p="${name}">⋯</button></td></tr>`;
+  const onRows =
+    row('Porado', '8f3a…c91d', '1h22m', '36h', '12') +
+    row('Steve', 'b71e…04aa', '14m', '9h', '3');
+  const allRows = onRows +
+    row('Alex', 'c44d…9e02', 'last seen 2d ago', '51h', '22') +
+    row('Herobrine', '41f8…77b0', 'last seen 9d ago', '3h', '7') +
+    row('Notch', '069a…5faa', 'last seen 30d ago', '12h', '1') +
+    row('Alex', 'c44d…9e02', 'last seen 2d ago', '51h', '22') +
+    row('Herobrine', '41f8…77b0', 'last seen 9d ago', '3h', '7') +
+    row('Notch', '069a…5faa', 'last seen 30d ago', '12h', '1');
+  document.getElementById('prows').innerHTML = onRows;
+  bindMenus();
   function ptab(which) {
     document.getElementById('prows').innerHTML = which === 'all' ? allRows : onRows;
     document.getElementById('tabon').className = which === 'all' ? '' : 'primary';
