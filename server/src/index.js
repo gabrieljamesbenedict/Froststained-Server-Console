@@ -14,6 +14,7 @@ import backupsRoutes from './routes/backups.js';
 import filesRoutes from './routes/files.js';
 import scheduleRoutes from './routes/schedule.js';
 import auditRoutes from './routes/audit.js';
+import adminUsersRoutes from './routes/adminUsers.js';
 import { attachConsoleWs } from './ws/console.js';
 import { loadConfig } from './config.js';
 import { openDb } from './db.js';
@@ -79,6 +80,7 @@ app.register(backupsRoutes);
 app.register(filesRoutes);
 app.register(scheduleRoutes);
 app.register(auditRoutes);
+app.register(adminUsersRoutes);
 attachConsoleWs(app);
 
 // Files browser serves the explorer view; mods/backups mount their own routes.
