@@ -7,6 +7,7 @@ import Players from './views/Players.jsx';
 import Files from './views/Files.jsx';
 import Mods from './views/Mods.jsx';
 import Dashboard from './views/Dashboard.jsx';
+import AdminUsers from './views/AdminUsers.jsx';
 
 const TITLES = {
   dash: 'Dashboard',
@@ -110,7 +111,7 @@ function MasterPower({ user }) {
   );
 }
 
-function SettingsView({ theme, setTheme }) {
+function SettingsView({ theme, setTheme, user }) {
   const [info, setInfo] = useState(null);
   useEffect(() => {
     api('/api/server/info').then(setInfo).catch(() => {});
@@ -140,6 +141,7 @@ function SettingsView({ theme, setTheme }) {
         <h3>Mod sources</h3>
         <p className="muted">Modrinth needs no key. Set <code>curseforge_api_key</code> in console config for CurseForge checks.</p>
       </div>
+      <AdminUsers currentUserId={user?.id} />
     </>
   );
 }
@@ -246,7 +248,7 @@ export default function App() {
     mods: <Mods />,
     files: <Files />,
     backups: <Backups />,
-    settings: <SettingsView theme={theme} setTheme={setTheme} />,
+    settings: <SettingsView theme={theme} setTheme={setTheme} user={state.user} />,
     account: <AccountView user={state.user} onLogout={logout} />,
   };
 
