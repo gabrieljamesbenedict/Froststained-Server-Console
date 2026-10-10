@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, POLL, STORE_KEYS, TOAST_MS, toast } from './api.js';
-import { AuthForm, Backups, PasswordForm } from './views/legacy.jsx';
+import { AuthForm, Backups, PasswordForm } from './views/shared.jsx';
 import Console from './views/Console.jsx';
 import Metrics from './views/Metrics.jsx';
 import Players from './views/Players.jsx';
