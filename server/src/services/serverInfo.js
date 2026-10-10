@@ -65,8 +65,6 @@ export function serverInfo({ config, rcon }) {
     ...detectLoader(config.serverPath),
     rcon: {
       configured: rcon.configured,
-      host: rcon.host,
-      port: rcon.port,
       reachable: null, // filled by the route (async, cached)
     },
   };

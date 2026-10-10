@@ -4,7 +4,7 @@ import path from 'node:path';
 // Server file browser. Every path stays jailed inside serverPath:
 // normalized, joined, then containment-checked. Text editing caps at 1 MB
 // with a .bak kept beside the original, matching the mockup contract.
-export const MAX_TEXT_BYTES = 1024 * 1024;
+const MAX_TEXT_BYTES = 1024 * 1024;
 
 function bad(msg) {
   const err = new Error(msg);
@@ -38,16 +38,12 @@ export function listDir(serverPath, rel) {
   }
   const entries = fs.readdirSync(full, { withFileTypes: true }).map((e) => {
     const f = path.join(full, e.name);
-    let sizeKb = null;
     let sizeB = null;
     let mtimeMs = 0;
     try {
       const st = fs.statSync(f);
       mtimeMs = Math.round(st.mtimeMs);
-      if (st.isFile()) {
-        sizeB = st.size;
-        sizeKb = Math.round(st.size / 1024);
-      }
+      if (st.isFile()) sizeB = st.size;
     } catch {
       // entry vanished mid-list; keep the name with unknown size
     }
@@ -55,13 +51,12 @@ export function listDir(serverPath, rel) {
       name: e.name,
       path: clean ? `${clean}/${e.name}` : e.name,
       dir: e.isDirectory(),
-      sizeKb,
       sizeB,
       mtimeMs,
     };
   });
   entries.sort((a, b) => Number(b.dir) - Number(a.dir) || a.name.localeCompare(b.name));
-  return { path: clean, entries };
+  return { entries };
 }
 
 export function readTextFile(serverPath, rel) {
@@ -82,7 +77,7 @@ export function readTextFile(serverPath, rel) {
   if (stat.size > MAX_TEXT_BYTES) {
     throw bad(`file is over 1 MB (${Math.round(stat.size / 1024)} KB); download it instead`);
   }
-  return { path: clean, sizeKb: Math.round(stat.size / 1024), maxBytes: MAX_TEXT_BYTES, content: fs.readFileSync(full, 'utf8') };
+  return { path: clean, maxBytes: MAX_TEXT_BYTES, content: fs.readFileSync(full, 'utf8') };
 }
 
 export function writeTextFile(serverPath, rel, content) {
@@ -98,7 +93,7 @@ export function writeTextFile(serverPath, rel, content) {
   }
   fs.copyFileSync(full, `${full}.bak`);
   fs.writeFileSync(full, text);
-  return { path: clean, sizeKb: Math.round(Buffer.byteLength(text, 'utf8') / 1024), backup: `${clean}.bak` };
+  return { path: clean, backup: `${clean}.bak` };
 }
 
 export function renameEntry(serverPath, from, to) {

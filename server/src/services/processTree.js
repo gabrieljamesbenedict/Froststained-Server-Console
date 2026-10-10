@@ -71,7 +71,6 @@ export async function processTree(rootPid, { threads = true } = {}) {
     pid: p.pid,
     name: p.name,
     cpuPct: Math.round(p.cpu * 10) / 10,
-    memPct: Math.round(p.mem * 10) / 10,
     memRssMb: Math.round(p.memRss / 1024),
     threads: threads ? (counts.get(p.pid) ?? null) : null,
   }));
@@ -79,5 +78,5 @@ export async function processTree(rootPid, { threads = true } = {}) {
   const totalMemMb = processes.reduce((a, p) => a + p.memRssMb, 0);
   const totalThreads = [...counts.values()].reduce((a, n) => a + n, 0);
 
-  return { running: true, rootPid, totalCpuPct: totalCpu, totalMemMb, totalThreads, processes };
+  return { running: true, totalCpuPct: totalCpu, totalMemMb, totalThreads, processes };
 }

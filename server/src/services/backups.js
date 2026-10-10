@@ -55,7 +55,7 @@ function buildZip(world, quiesced) {
   return { zip, skipped };
 }
 
-export function backupFileName(date = new Date()) {
+function backupFileName(date = new Date()) {
   const p = (n) => String(n).padStart(2, '0');
   return `backup-${date.getFullYear()}${p(date.getMonth() + 1)}${p(date.getDate())}-${p(date.getHours())}${p(date.getMinutes())}${p(date.getSeconds())}.zip`;
 }

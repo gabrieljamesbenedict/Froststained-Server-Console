@@ -37,7 +37,7 @@ function dirSizeKb(dir) {
 export function worldInfo(serverPath) {
   const now = Date.now();
   if (cache.info && cache.key === serverPath && now - cache.at < CACHE_MS) {
-    return { ...cache.info, cached: true };
+    return cache.info;
   }
   const dir = worldDir(serverPath);
   if (!fs.existsSync(dir)) {
@@ -45,7 +45,7 @@ export function worldInfo(serverPath) {
     err.code = 'NO_WORLD';
     throw err;
   }
-  const info = { world: path.basename(dir), sizeKb: dirSizeKb(dir), cached: false };
+  const info = { world: path.basename(dir), sizeKb: dirSizeKb(dir) };
   cache = { key: serverPath, at: now, info };
   return info;
 }
