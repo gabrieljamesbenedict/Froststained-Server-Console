@@ -19,6 +19,37 @@ export function wsUrl() {
   return `${proto}//${window.location.host}/ws/console`;
 }
 
+// Shared tuning: poll cadences, buffer caps and storage keys live here so
+// views can't drift apart. Backend-coupled copy (password length, text cap)
+// stays at the usage site with a comment instead.
+export const POLL = {
+  fast: 5000, // metrics, log tail, server status
+  status: 10000, // sidebar power, online players
+  activity: 15000, // audit feed
+  slow: 30000, // schedule, backups
+  world: 60000, // world size
+};
+
+export const LIMITS = {
+  consoleLines: 500,
+  commandHistory: 50,
+  netSamples: 60,
+  auditFeed: 8,
+  logTail: 30,
+  modSearch: 10,
+  modCheckConcurrency: 4,
+  updateSummary: 3,
+  feedTruncate: 80,
+  searchTruncate: 100,
+};
+
+export const STORE_KEYS = {
+  theme: 'frost-theme',
+  modUpdates: 'frost-mod-updates',
+};
+
+export const TOAST_MS = 4000;
+
 export function toast(title, body, kind) {
   window.dispatchEvent(new CustomEvent('toast', { detail: { title, body, kind } }));
 }
@@ -68,7 +99,7 @@ export function humanizeActivity(a) {
     case 'server.kill':
       return `${who} force-stopped the server`;
     case 'server.command':
-      return `${who} ran "${d.slice(0, 80)}"`;
+      return `${who} ran "${d.slice(0, LIMITS.feedTruncate)}"`;
     case 'backup.create': {
       const m = d.match(/\((\d+) KB/);
       const size = m ? ` · ${formatBytes(Math.round(Number(m[1]) / 1024))}` : '';
@@ -100,13 +131,13 @@ export function humanizeActivity(a) {
       const m = a.action.match(/^player\.(.+)$/);
       if (m) {
         const parts = d.split(' ').filter(Boolean);
-        if (m[1] === 'say') return `${who} broadcast "${parts.slice(1).join(' ').slice(0, 80)}"`;
+        if (m[1] === 'say') return `${who} broadcast "${parts.slice(1).join(' ').slice(0, LIMITS.feedTruncate)}"`;
         if (m[1] === 'whitelist-add') return `${who} whitelisted ${parts[parts.length - 1]}`;
         if (m[1] === 'whitelist-remove') return `${who} removed ${parts[parts.length - 1]} from the whitelist`;
         const verb = PLAYER_VERBS[m[1]];
-        if (verb) return `${who} ${verb} ${parts.slice(1).join(' ').slice(0, 80)}`;
+        if (verb) return `${who} ${verb} ${parts.slice(1).join(' ').slice(0, LIMITS.feedTruncate)}`;
       }
-      return `${who} ${a.action}${d ? ` — ${d.slice(0, 80)}` : ''}`;
+      return `${who} ${a.action}${d ? ` — ${d.slice(0, LIMITS.feedTruncate)}` : ''}`;
     }
   }
 }

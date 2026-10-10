@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, toast } from '../api.js';
+import { api, LIMITS, STORE_KEYS, toast } from '../api.js';
 
 function fmtModified(ms) {
   if (!ms) return '—';
@@ -110,7 +110,7 @@ export default function Mods() {
     const list = mods.mods;
     setChecking({ done: 0, total: list.length });
     const queue = [...list];
-    const workers = Array.from({ length: 4 }, async () => {
+    const workers = Array.from({ length: LIMITS.modCheckConcurrency }, async () => {
       while (queue.length && checkRun.current === run) {
         const mod = queue.shift();
         try {
@@ -133,13 +133,13 @@ export default function Mods() {
     setChecks((c) => {
       const ups = Object.entries(c).filter(([f, r]) => list.some((m) => m.file === f) && updateOf(r));
       const summary = ups.length
-        ? ups.slice(0, 3).map(([f, r]) => {
+        ? ups.slice(0, LIMITS.updateSummary).map(([f, r]) => {
           const mod = list.find((m) => m.file === f);
           return `${mod?.name ?? f} ${mod?.version ?? ''} → ${updateOf(r).version}`;
         }).join(', ')
         : '';
       try {
-        localStorage.setItem('frost-mod-updates', JSON.stringify(
+        localStorage.setItem(STORE_KEYS.modUpdates, JSON.stringify(
           ups.length ? { at: Date.now(), count: ups.length, summary: `${ups.length} update${ups.length > 1 ? 's' : ''}: ${summary}` } : null,
         ));
       } catch { /* private mode: dashboard just stays quiet */ }
@@ -309,7 +309,7 @@ function DownloadDialog({ dl, setDl, onInstalled }) {
     setPicked(null);
     setVersions(null);
     try {
-      const res = await api(`/api/mods/search?source=${dl.source}&q=${encodeURIComponent(q.trim())}&limit=10`);
+      const res = await api(`/api/mods/search?source=${dl.source}&q=${encodeURIComponent(q.trim())}&limit=${LIMITS.modSearch}`);
       setHits(res.hits);
       if (res.hits.length === 0) setError('No projects found.');
     } catch (err) {
@@ -325,7 +325,7 @@ function DownloadDialog({ dl, setDl, onInstalled }) {
     setError('');
     setBusy(true);
     try {
-      const res = await api(`/api/mods/versions?source=${dl.source}&id=${encodeURIComponent(hit.id)}&limit=10`);
+      const res = await api(`/api/mods/versions?source=${dl.source}&id=${encodeURIComponent(hit.id)}&limit=${LIMITS.modSearch}`);
       setVersions(res.versions);
       if (res.versions.length === 0) setError('No versions for this game + loader.');
     } catch (err) {
@@ -376,7 +376,7 @@ function DownloadDialog({ dl, setDl, onInstalled }) {
             <tbody>
               {hits.map((h) => (
                 <tr key={`${h.source}-${h.id}`} onClick={() => pick(h)} style={{ cursor: 'pointer' }}>
-                  <td><b>{h.title}</b><br /><span className="muted">{h.description.slice(0, 100)}</span></td>
+                  <td><b>{h.title}</b><br /><span className="muted">{h.description.slice(0, LIMITS.searchTruncate)}</span></td>
                   <td className="num">{h.downloads.toLocaleString()}</td>
                 </tr>
               ))}

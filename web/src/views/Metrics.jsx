@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, formatBytes } from '../api.js';
+import { api, formatBytes, LIMITS, POLL } from '../api.js';
 
 function Chart({ values, color, topLabel }) {
   const pts = values.filter((v) => v != null);
@@ -50,14 +50,14 @@ export default function Metrics() {
         const s = data.system?.latest;
         if (s?.net?.length) {
           const top = [...s.net].sort((a, b) => b.rxSecKb + b.txSecKb - (a.rxSecKb + a.txSecKb))[0];
-          setNetHist((h) => [...h, { rx: top.rxSecKb, tx: top.txSecKb, iface: top.iface }].slice(-60));
+          setNetHist((h) => [...h, { rx: top.rxSecKb, tx: top.txSecKb, iface: top.iface }].slice(-LIMITS.netSamples));
         }
       } catch (err) {
         if (alive) setError(err.message);
       }
     };
     poll();
-    const t = setInterval(poll, 5000);
+    const t = setInterval(poll, POLL.fast);
     return () => {
       alive = false;
       clearInterval(t);

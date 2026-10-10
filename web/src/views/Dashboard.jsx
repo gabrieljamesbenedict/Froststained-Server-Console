@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, formatAgo, formatBytes, humanizeActivity, logClass, toast } from '../api.js';
+import { api, formatAgo, formatBytes, humanizeActivity, LIMITS, logClass, POLL, STORE_KEYS, toast } from '../api.js';
 
 function usePoll(fn, ms, deps = []) {
   useEffect(() => {
@@ -30,7 +30,7 @@ export function ServerControl({ onChange }) {
       setStatus(s);
       onChange?.(s);
     }
-  }, 5000);
+  }, POLL.fast);
 
   const action = async (name, body) => {
     try {
@@ -71,7 +71,7 @@ export default function Dashboard({ go }) {
   // Filled by the Mods view after an update check; null hides the alert.
   const [modUpdates, setModUpdates] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('frost-mod-updates'));
+      return JSON.parse(localStorage.getItem(STORE_KEYS.modUpdates));
     } catch {
       return null;
     }
@@ -80,24 +80,24 @@ export default function Dashboard({ go }) {
   usePoll(async (alive) => {
     const m = await api('/api/metrics');
     if (alive) setMetrics(m);
-  }, 5000);
+  }, POLL.fast);
 
   usePoll(async (alive) => {
-    const l = await api('/api/server/log?lines=30');
+    const l = await api(`/api/server/log?lines=${LIMITS.logTail}`);
     if (alive) setTail(l.lines);
-  }, 5000);
+  }, POLL.fast);
 
   usePoll(async (alive) => {
-    const a = await api('/api/audit?limit=8');
+    const a = await api(`/api/audit?limit=${LIMITS.auditFeed}`);
     if (alive) {
       setActivity(a.entries);
       try {
-        setModUpdates(JSON.parse(localStorage.getItem('frost-mod-updates')));
+        setModUpdates(JSON.parse(localStorage.getItem(STORE_KEYS.modUpdates)));
       } catch {
         // private mode: update alert just stays hidden
       }
     }
-  }, 15000);
+  }, POLL.activity);
 
   usePoll(async (alive) => {
     const [sc, b] = await Promise.all([api('/api/schedule'), api('/api/backups')]);
@@ -105,12 +105,12 @@ export default function Dashboard({ go }) {
       setSched(sc);
       setBackups(b);
     }
-  }, 30000);
+  }, POLL.slow);
 
   usePoll(async (alive) => {
     const w = await api('/api/server/world').catch(() => null);
     if (alive) setWorld(w);
-  }, 60000);
+  }, POLL.world);
 
   const s = metrics?.system?.latest;
   const players = metrics?.server?.players;
