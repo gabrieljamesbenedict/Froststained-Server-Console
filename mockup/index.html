@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- Froststained Server Console - UI concept v3. Open straight from disk. -->
-<!-- Fake data, no backend. Full-width, control card, Files tab. -->
+<!-- Froststained Server Console - UI concept v4, rebuilt. Open from disk. -->
+<!-- Fake data, no backend. Grid dashboard, full console, account tab. -->
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Froststained Server Console - Concept v3</title>
+<title>Froststained Server Console - Concept v4</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Monaspace+Xenon:wght@400;500;700&family=Monaspace+Neon:wght@400;500;700&family=Monaspace+Krypton:wght@400;500;700&display=swap" />
 <style>
   :root, [data-theme="dark"] {
@@ -26,7 +26,7 @@
     display: flex; min-height: 100vh; }
   h1, h2, h3 { font-family: "Monaspace Krypton", ui-monospace, monospace;
     letter-spacing: -.01em; }
-  .num, td.num, th.num, code, #log, textarea { font-family: "Monaspace Neon", ui-monospace, monospace; }
+  .num, td.num, th.num, code, .term, textarea { font-family: "Monaspace Neon", ui-monospace, monospace; }
   .num, td.num { font-variant-numeric: tabular-nums; }
   aside { width: 196px; background: var(--surface); border-right: 1px solid var(--border);
     padding: 16px 0; display: flex; flex-direction: column; flex-shrink: 0; }
@@ -38,7 +38,9 @@
   aside button.active { border-left-color: var(--accent); color: var(--text);
     background: var(--border); }
   aside button:hover { color: var(--text); }
-  aside .foot { margin-top: auto; font-size: 11px; color: var(--muted); padding: 0 16px; }
+  aside button.acct { margin-top: auto; border-top: 1px solid var(--border);
+    padding-top: 12px; }
+  aside .foot { font-size: 11px; color: var(--muted); padding: 8px 16px 0; }
   main { flex: 1; padding: 20px 28px; max-width: 1600px; display: flex; flex-direction: column; }
   header.top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
   header.top h2 { margin: 0; font-size: 20px; }
@@ -50,15 +52,24 @@
   .card { background: var(--surface); border: 1px solid var(--border);
     border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; }
   .card h3 { margin: 0 0 8px 0; font-size: 14px; }
-  .statrow { display: flex; gap: 12px; flex-wrap: wrap; }
-  .stat { flex: 1; min-width: 140px; }
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+  .grid > .card { margin-bottom: 0; }
+  .span3 { grid-column: span 3; } .span4 { grid-column: span 4; }
+  .span6 { grid-column: span 6; } .span8 { grid-column: span 8; }
+  .span12 { grid-column: span 12; }
   .stat b { font-size: 22px; display: block; }
   .stat span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-  #log { background: var(--logbg); color: #e6edf3; border: 1px solid var(--border);
-    border-radius: 8px; padding: 12px; height: 340px; overflow-y: auto;
+  .alert { border-left: 3px solid var(--warn); padding: 8px 12px; margin-bottom: 8px;
+    background: var(--bg); border-radius: 0 6px 6px 0; font-size: 13px; }
+  .alert.err { border-left-color: var(--stain); }
+  .alert.ok { border-left-color: var(--ok); }
+  .term { background: var(--logbg); color: #e6edf3; border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; overflow-y: auto;
     font-size: 12px; line-height: 1.6; white-space: pre-wrap; }
-  #log .warn { color: var(--warn); } #log .rcon { color: var(--accent); }
-  #log .join { color: var(--ok); }
+  #logfull { height: calc(100vh - 340px); min-height: 300px; }
+  #logtail { height: 220px; }
+  .term .warn { color: var(--warn); } .term .rcon { color: var(--accent); }
+  .term .join { color: var(--ok); }
   .row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
   .divider { width: 1px; align-self: stretch; background: var(--border); margin: 0 4px; }
   button, .btn { background: var(--surface); color: var(--text); border: 1px solid var(--border);
@@ -74,8 +85,9 @@
   th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); }
   td.num, th.num { text-align: right; }
   tbody tr:hover { background: var(--border); }
-  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); margin-right: 6px; }
-  .dot.off { background: var(--muted); }
+  .badge { font-size: 11px; border: 1px solid var(--border); border-radius: 4px;
+    padding: 1px 6px; color: var(--muted); }
+  .badge.upd { color: var(--warn); border-color: var(--warn); }
   .view { display: none; } .view.active { display: block; }
   .muted { color: var(--muted); font-size: 12px; }
   .crumb { font-size: 13px; margin-bottom: 8px; }
@@ -86,7 +98,8 @@
     border-left: 3px solid var(--accent); border-radius: 6px; padding: 10px 14px; font-size: 13px; }
   .toast b { display: block; } .toast span { font-size: 12px; color: var(--muted); }
   .toast.ok { border-left-color: var(--ok); } .toast.err { border-left-color: var(--stain); }
-  @media (max-width: 700px) {
+  @media (max-width: 900px) {
+    .span3, .span4, .span6, .span8 { grid-column: span 12; }
     aside { width: 60px; } aside h1 span.w, aside .foot, aside button span { display: none; }
     aside button { text-align: center; }
   }
@@ -96,24 +109,45 @@
 <aside>
   <h1><span class="frost">FROST</span><span class="stained">STAINED</span></h1>
   <button data-v="dash" class="active"><span>Dashboard</span></button>
-  <button data-v="files"><span>Server files</span></button>
+  <button data-v="console"><span>Console</span></button>
   <button data-v="metrics"><span>Metrics</span></button>
   <button data-v="players"><span>Players</span></button>
   <button data-v="mods"><span>Mods</span></button>
+  <button data-v="files"><span>Files</span></button>
   <button data-v="backups"><span>Backups</span></button>
   <button data-v="settings"><span>Settings</span></button>
+  <button data-v="account" class="acct"><span>Account · admin</span></button>
   <div class="foot">v0.1 · :3100</div>
 </aside>
 <main>
   <header class="top">
     <h2 id="title">Dashboard</h2>
-    <span class="pill on" id="statepill">● Running · pid 24240 · up 2h14m</span>
     <span class="spacer"></span>
-    <span class="pill">admin</span>
     <button id="theme">☾ theme</button>
   </header>
 
   <section class="view active" id="v-dash">
+    <div class="grid">
+      <div class="card span12"><h3>Attention</h3>
+        <div class="alert">Create 6.0.5 → 6.0.6 available on Modrinth. <a href="#" onclick="go('mods');return false" style="color:var(--accent)">Review</a></div>
+        <div class="alert ok">Scheduled backup ran 22m ago · 198 MB</div>
+      </div>
+      <div class="card span3 stat"><span>State</span><b style="color:var(--ok)">● Running</b><span class="muted">pid 24240 · up 2h14m</span></div>
+      <div class="card span3 stat"><span>Players</span><b class="num">2</b></div>
+      <div class="card span3 stat"><span>MC RAM</span><b class="num">4.2 GB</b></div>
+      <div class="card span3 stat"><span>World</span><b class="num">212 MB</b></div>
+      <div class="card span8"><h3>Live tail</h3><div class="term" id="logtail"></div>
+        <p class="muted"><a href="#" onclick="go('console');return false" style="color:var(--accent)">Open full console</a></p></div>
+      <div class="card span4"><h3>Activity</h3>
+        <div class="muted">10:28 Steve joined the game</div>
+        <div class="muted">10:24 admin kicked NobodyHere123</div>
+        <div class="muted">10:11 scheduled backup · 198 MB</div>
+        <div class="muted">09:58 admin enabled Aerowear</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="v-console">
     <div class="card"><h3>Server control</h3>
       <div class="row" style="margin-top:0">
         <button class="primary" onclick="power('start')">Start server</button>
@@ -123,50 +157,43 @@
         <button class="danger" onclick="power('kill')">Force stop</button>
       </div>
     </div>
-    <div class="card statrow">
-      <div class="stat"><span>Host CPU</span><b class="num">41%</b></div>
-      <div class="stat"><span>Host memory</span><b class="num">15.6 / 24 GB</b></div>
-      <div class="stat"><span>Host disk</span><b class="num">62%</b></div>
-    </div>
-    <div class="card"><h3>Server console</h3><div id="log"></div>
+    <div class="card"><h3>Terminal</h3>
+      <div class="row" style="margin:0 0 8px 0">
+        <label class="muted"><input type="checkbox" checked /> Follow</label>
+        <select><option>all levels</option><option>info+</option><option>warn+</option><option>errors</option></select>
+        <button>Download log</button>
+      </div>
+      <div class="term" id="logfull"></div>
       <form class="row" onsubmit="return sendCmd(event)">
         <input id="cmd" placeholder="command… (try: list)" style="flex:1" autocomplete="off" />
         <button class="primary" type="submit">Send</button>
       </form>
     </div>
-    <div class="card"><h3>Players online · 2</h3>
-      <table><thead><tr><th>Player</th><th>Online for</th><th></th></tr></thead>
-      <tbody><tr><td>Porado</td><td class="num">1h22m</td><td><button onclick="toast('Player kicked','Porado left the game','ok')">Kick</button></td></tr>
-      <tr><td>Steve</td><td class="num">14m</td><td><button onclick="toast('Player kicked','Steve left the game','ok')">Kick</button></td></tr></tbody></table>
-      <p class="muted"><a href="#" onclick="go('players');return false" style="color:var(--accent)">Manage all players</a></p>
-    </div>
   </section>
 
-  <section class="view" id="v-files">
-    <div class="card"><h3>Server files</h3>
-      <div class="crumb"><a href="#" onclick="return false">server</a> / <a href="#" onclick="return false">config</a> /</div>
-      <table><thead><tr><th>Name</th><th class="num">Size</th><th>Modified</th><th></th></tr></thead>
-      <tbody>
-        <tr><td>📁 ..</td><td></td><td></td><td></td></tr>
-        <tr><td>📄 server.properties</td><td class="num">1.4 KB</td><td class="num">2h ago</td>
-          <td><button onclick="toast('Opened in editor','server.properties — restart required after save')">Edit</button> <button>Download</button></td></tr>
-        <tr><td>📄 whitelist.json</td><td class="num">18 B</td><td class="num">3d ago</td>
-          <td><button>Edit</button> <button>Download</button></td></tr>
-        <tr><td>📁 world/CreateAero_Froststained</td><td class="num">—</td><td class="num">—</td><td><button>Open</button></td></tr>
-        <tr><td>📄 user_jvm_args.txt</td><td class="num">339 B</td><td class="num">12d ago</td>
-          <td><button>Edit</button> <button>Download</button></td></tr>
-      </tbody></table>
-    </div>
-    <div class="card"><h3>Editor · server.properties</h3>
-      <textarea class="code" spellcheck="false">server-port=25565
-max-players=20
-difficulty=hard
-enable-rcon=true
-rcon.port=25575
-rcon.password=••••••••
-motd=Welcome to Froststained\!</textarea>
-      <div class="row"><button class="primary" onclick="toast('File saved','Original kept as server.properties.bak — restart to apply','ok')">Save</button>
-      <span class="muted">Only text files under 1 MB are editable. A backup is kept on every save.</span></div>
+  <section class="view" id="v-metrics">
+    <div class="grid">
+      <div class="card span3 stat"><span>MC CPU</span><b class="num">34%</b></div>
+      <div class="card span3 stat"><span>MC RAM</span><b class="num">4.2 GB</b></div>
+      <div class="card span3 stat"><span>Threads</span><b class="num">96</b></div>
+      <div class="card span3 stat"><span>Host CPU</span><b class="num">41%</b></div>
+      <div class="card span4"><h3>MC CPU% · 1h</h3>
+        <svg width="100%" height="80" viewBox="0 0 400 90" preserveAspectRatio="none">
+          <path d="M0,60 L40,58 L80,62 L120,55 L160,50 L200,30 L240,34 L280,28 L320,40 L360,38 L400,42"
+            fill="none" stroke="var(--accent)" stroke-width="2"/></svg></div>
+      <div class="card span4"><h3>MC RAM · 1h</h3>
+        <svg width="100%" height="80" viewBox="0 0 400 90" preserveAspectRatio="none">
+          <path d="M0,70 L40,68 L80,66 L120,60 L160,55 L200,50 L240,48 L280,45 L320,44 L360,43 L400,42"
+            fill="none" stroke="var(--ok)" stroke-width="2"/></svg></div>
+      <div class="card span4"><h3>Host disk · 1h</h3>
+        <svg width="100%" height="80" viewBox="0 0 400 90" preserveAspectRatio="none">
+          <path d="M0,75 L40,74 L80,74 L120,73 L160,73 L200,72 L240,72 L280,71 L320,71 L360,70 L400,70"
+            fill="none" stroke="var(--warn)" stroke-width="2"/></svg></div>
+      <div class="card span12"><table>
+        <thead><tr><th>PID</th><th>Name</th><th class="num">CPU%</th><th class="num">RSS</th><th class="num">Threads</th></tr></thead>
+        <tbody><tr><td class="num">24240</td><td>java</td><td class="num">31.2</td><td class="num">4.1 GB</td><td class="num">84</td></tr>
+        <tr><td class="num">24804</td><td>java</td><td class="num">2.1</td><td class="num">120 MB</td><td class="num">12</td></tr></tbody>
+      </table></div>
     </div>
   </section>
 
@@ -190,56 +217,56 @@ motd=Welcome to Froststained\!</textarea>
   <section class="view" id="v-mods">
     <div class="card"><h3>Mods · 86</h3>
       <div class="row" style="margin:0 0 8px 0">
-        <button class="primary" onclick="toast('Add mod','Choose a source: local .jar file, Modrinth, or CurseForge')">Add mod…</button>
+        <button class="primary" onclick="toast('Add mod','Local .jar, Modrinth, or CurseForge')">Add mod…</button>
       </div>
-      <table><thead><tr><th>Mod</th><th>Version</th><th>Loader</th><th class="num">Size</th><th>Status</th><th></th></tr></thead>
+      <table><thead><tr><th></th><th>Mod</th><th>Version</th><th>Loader</th><th class="num">Size</th><th></th></tr></thead>
       <tbody>
-        <tr><td>Architectury</td><td class="num">13.0.11</td><td>neoforge</td><td class="num">571 KB</td><td><span class="dot"></span>on</td>
-          <td><button>Disable</button> <button>Updates</button> <button class="danger">Remove</button></td></tr>
-        <tr><td>Create</td><td class="num">6.0.5</td><td>neoforge</td><td class="num">4.7 MB</td><td><span class="dot"></span>on</td>
-          <td><button>Disable</button> <button onclick="toast('Update available','Create 6.0.5 → 6.0.6')">Updates</button> <button class="danger">Remove</button></td></tr>
-        <tr><td>Aerowear</td><td class="num">1.0.0</td><td>neoforge</td><td class="num">7 KB</td><td><span class="dot off"></span>off</td>
-          <td><button>Enable</button> <button>Updates</button> <button class="danger">Remove</button></td></tr>
+        <tr><td><input type="checkbox" checked /></td><td>Architectury</td><td class="num">13.0.11</td><td><span class="badge">neoforge</span></td><td class="num">571 KB</td>
+          <td><button>Updates</button> <button class="danger">Remove</button></td></tr>
+        <tr><td><input type="checkbox" checked /></td><td>Create</td><td class="num">6.0.5</td><td><span class="badge">neoforge</span></td><td class="num">4.7 MB</td>
+          <td><button class="badge upd" onclick="toast('Update available','Create 6.0.5 → 6.0.6')">1 update</button> <button class="danger">Remove</button></td></tr>
+        <tr><td><input type="checkbox" /></td><td>Aerowear</td><td class="num">1.0.0</td><td><span class="badge">neoforge</span></td><td class="num">7 KB</td>
+          <td><button>Updates</button> <button class="danger">Remove</button></td></tr>
       </tbody></table>
-      <p class="muted">Changes apply on server restart.</p>
+      <p class="muted">Unchecking disables on next restart. Changes apply on server restart.</p>
+    </div>
+  </section>
+
+  <section class="view" id="v-files">
+    <div class="card"><h3>Server files</h3>
+      <div class="crumb"><a href="#" onclick="return false">server</a> /</div>
+      <table><thead><tr><th>Name</th><th class="num">Size</th><th>Modified</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>📁 config</td><td class="num">—</td><td class="num">—</td><td><button>Open</button></td></tr>
+        <tr><td>📄 server.properties</td><td class="num">1.4 KB</td><td class="num">2h ago</td>
+          <td><button>Edit</button> <button>Download</button></td></tr>
+        <tr><td>📄 whitelist.json</td><td class="num">18 B</td><td class="num">3d ago</td>
+          <td><button>Edit</button> <button>Download</button></td></tr>
+        <tr><td>📄 user_jvm_args.txt</td><td class="num">339 B</td><td class="num">12d ago</td>
+          <td><button>Edit</button> <button>Download</button></td></tr>
+      </tbody></table>
+    </div>
+    <div class="card"><h3>Viewer · server.properties</h3>
+      <textarea class="code" spellcheck="false">server-port=25565
+max-players=20
+difficulty=hard
+enable-rcon=true
+motd=Welcome to Froststained\!</textarea>
+      <div class="row"><button class="primary" onclick="toast('File saved','Backup kept · restart to apply','ok')">Save</button>
+      <span class="muted">Text files under 1 MB. Original kept as .bak on every save.</span></div>
     </div>
   </section>
 
   <section class="view" id="v-backups">
     <div class="card"><h3>Backups · 2</h3>
       <button class="primary" onclick="toast('Backup created','backup-20261010-041200.zip · 198 MB','ok')">Create backup</button>
-      <ul><li><span class="num">backup-20261010-034801.zip · 198 MB</span> <a href="#" onclick="return false" style="color:var(--accent)">Download</a>
-        <button>Restore</button> <button class="danger">Delete</button></li>
-        <li><span class="num">backup-20261010-034643.zip · 198 MB</span> <a href="#" onclick="return false" style="color:var(--accent)">Download</a>
-        <button>Restore</button> <button class="danger">Delete</button></li></ul>
+      <table><thead><tr><th>File</th><th class="num">Size</th><th>Created</th><th></th></tr></thead>
+      <tbody><tr><td class="num">backup-20261010-034801.zip</td><td class="num">198 MB</td><td class="num">22m ago</td>
+        <td><button>Download</button> <button>Restore</button> <button class="danger">Delete</button></td></tr>
+      <tr><td class="num">backup-20261010-034643.zip</td><td class="num">198 MB</td><td class="num">2h ago</td>
+        <td><button>Download</button> <button>Restore</button> <button class="danger">Delete</button></td></tr></tbody></table>
       <p class="muted">Schedule: backup every off · restart at off</p>
     </div>
-  </section>
-
-  <section class="view" id="v-metrics">
-    <div class="card statrow">
-      <div class="stat"><span>MC CPU</span><b class="num">34%</b></div>
-      <div class="stat"><span>MC RAM</span><b class="num">4.2 GB</b></div>
-      <div class="stat"><span>Threads</span><b class="num">96</b></div>
-      <div class="stat"><span>Host CPU</span><b class="num">41%</b></div>
-    </div>
-    <div class="card"><h3>MC CPU% · last hour</h3>
-      <svg width="100%" height="90" viewBox="0 0 400 90" preserveAspectRatio="none">
-        <path d="M0,60 L40,58 L80,62 L120,55 L160,50 L200,30 L240,34 L280,28 L320,40 L360,38 L400,42"
-          fill="none" stroke="var(--accent)" stroke-width="2"/></svg></div>
-    <div class="card"><h3>MC RAM · last hour</h3>
-      <svg width="100%" height="90" viewBox="0 0 400 90" preserveAspectRatio="none">
-        <path d="M0,70 L40,68 L80,66 L120,60 L160,55 L200,50 L240,48 L280,45 L320,44 L360,43 L400,42"
-          fill="none" stroke="var(--ok)" stroke-width="2"/></svg></div>
-    <div class="card"><h3>Host disk · last hour</h3>
-      <svg width="100%" height="90" viewBox="0 0 400 90" preserveAspectRatio="none">
-        <path d="M0,75 L40,74 L80,74 L120,73 L160,73 L200,72 L240,72 L280,71 L320,71 L360,70 L400,70"
-          fill="none" stroke="var(--warn)" stroke-width="2"/></svg></div>
-    <div class="card"><table>
-      <thead><tr><th>PID</th><th>Name</th><th class="num">CPU%</th><th class="num">RSS</th><th class="num">Threads</th></tr></thead>
-      <tbody><tr><td class="num">24240</td><td>java</td><td class="num">31.2</td><td class="num">4.1 GB</td><td class="num">84</td></tr>
-      <tr><td class="num">24804</td><td>java</td><td class="num">2.1</td><td class="num">120 MB</td><td class="num">12</td></tr></tbody>
-    </table></div>
   </section>
 
   <section class="view" id="v-settings">
@@ -248,18 +275,26 @@ motd=Welcome to Froststained\!</textarea>
     <div class="card"><h3>Appearance</h3>
       <button onclick="setTheme('dark')">Frost Dark</button>
       <button onclick="setTheme('light')">Frost Light</button></div>
-    <div class="card"><h3>Account</h3>
-      <div class="row"><input placeholder="Current password" type="password" />
-      <input placeholder="New password" type="password" />
-      <button class="primary">Change password</button></div></div>
     <div class="card"><h3>Mod sources</h3>
       <input placeholder="CurseForge API key" style="width:260px" /> <button>Save</button></div>
+  </section>
+
+  <section class="view" id="v-account">
+    <div class="card"><h3>Account · admin</h3>
+      <p class="muted">Signed in · role admin</p>
+      <button onclick="toast('Signed out','Session ended','ok')">Sign out</button></div>
+    <div class="card"><h3>Change password</h3>
+      <div class="row"><input placeholder="Current password" type="password" />
+      <input placeholder="New password (8+ chars)" type="password" />
+      <input placeholder="Confirm new" type="password" />
+      <button class="primary" onclick="toast('Password changed','Other sessions signed out','ok')">Change password</button></div></div>
   </section>
 </main>
 <div id="toasts"></div>
 <script>
-  const titles = { dash:'Dashboard', files:'Server files', metrics:'Metrics',
-    players:'Players', mods:'Mods', backups:'Backups', settings:'Settings' };
+  const titles = { dash:'Dashboard', console:'Console', metrics:'Metrics',
+    players:'Players', mods:'Mods', files:'Server files', backups:'Backups',
+    settings:'Settings', account:'Account' };
   function go(v) { document.querySelector(`aside button[data-v="${v}"]`).click(); }
   document.querySelectorAll('aside button[data-v]').forEach(b => b.onclick = () => {
     document.querySelectorAll('aside button[data-v]').forEach(x => x.classList.remove('active'));
@@ -283,26 +318,33 @@ motd=Welcome to Froststained\!</textarea>
   }
   document.getElementById('theme').onclick = () =>
     setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
-  const log = document.getElementById('log');
   const seed = [
     ['[10:28:01] [Server thread/INFO]: Done (13.7s)! For help, type "help"', ''],
     ['[10:28:44] [Server thread/INFO]: Steve joined the game', 'join'],
     ['[10:29:02] [Server thread/WARN]: Voice chat running in offline mode!', 'warn'],
     ['[Rcon: Added frosttestuser to the whitelist', 'rcon'],
   ];
-  seed.forEach(([t, c]) => {
-    const d = document.createElement('div'); if (c) d.className = c; d.textContent = t; log.appendChild(d);
-  });
+  function fill(id, lines) {
+    const el = document.getElementById(id);
+    lines.forEach(([t, c]) => {
+      const d = document.createElement('div'); if (c) d.className = c; d.textContent = t; el.appendChild(d);
+    });
+  }
+  fill('logtail', seed.slice(0, 3));
+  fill('logfull', seed);
   setInterval(() => {
     const d = document.createElement('div');
     d.textContent = '[' + new Date().toLocaleTimeString() + '] [Server thread/INFO]: Saving sub-levels…';
-    log.appendChild(d); log.scrollTop = log.scrollHeight;
+    document.getElementById('logfull').appendChild(d);
+    const f = document.getElementById('logfull');
+    f.scrollTop = f.scrollHeight;
   }, 8000);
   function sendCmd(e) {
     e.preventDefault();
     const inp = document.getElementById('cmd');
     const cmd = inp.value.trim(); if (!cmd) return false;
     inp.value = '';
+    const log = document.getElementById('logfull');
     const d = document.createElement('div'); d.textContent = '> ' + cmd; log.appendChild(d);
     const r = document.createElement('div');
     r.textContent = cmd === 'list'
@@ -313,9 +355,6 @@ motd=Welcome to Froststained\!</textarea>
   function power(a) {
     if (a === 'kill') { toast('Force stop sent', 'SIGKILL to the process tree', 'err'); }
     else toast('Server ' + a, a === 'start' ? 'booting…' : 'stopping gracefully…', 'ok');
-    const pill = document.getElementById('statepill');
-    if (a === 'stop' || a === 'kill') { pill.textContent = '○ Stopped'; pill.className = 'pill off'; }
-    else { pill.textContent = '● Running · pid 24240 · up 0h00m'; pill.className = 'pill on'; }
   }
   function pact() {
     const n = document.getElementById('pname').value || 'Steve';
