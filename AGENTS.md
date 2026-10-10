@@ -9,6 +9,17 @@ instance (2 servers = 2 console copies on different ports via `--port/--config`)
 - Frontend: React + Vite SPA, served by backend on a single port in production
 - Install model: portable single exe, `config.yml` + `data.db` co-located, sibling folder to MC server
 
+## Sub-agents
+- Delegate independent or long-running tasks to sub-agents by default
+  (`explore` for codebase discovery, `general` for multi-step work)
+- Use foreground (default) when the result is needed immediately;
+  use `background: true` for work that can proceed while you continue elsewhere
+- Only handle directly when the task is tightly coupled to the current
+  context (small edits, dependent sequential steps)
+- Never ask a subagent to create or update plan files unless the user
+  explicitly requests it; plans live in
+  `C:\Users\Gabriel\.opencode\plan`
+
 ## Commands
 - `npm install` - install workspaces (root)
 - `npm run dev:server` - backend dev (Fastify on `0.0.0.0:3100`)
