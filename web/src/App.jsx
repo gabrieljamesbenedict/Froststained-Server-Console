@@ -111,15 +111,24 @@ function MasterPower({ user }) {
 }
 
 function SettingsView({ theme, setTheme }) {
-  const [health, setHealth] = useState(null);
+  const [info, setInfo] = useState(null);
   useEffect(() => {
-    api('/api/health').then(setHealth).catch(() => {});
+    api('/api/server/info').then(setInfo).catch(() => {});
   }, []);
   return (
     <>
       <div className="card">
         <h3>Server</h3>
-        <p>Backend: <code>{health ? `${health.service} ok` : '…'}</code></p>
+        {!info ? (
+          <p className="muted">Loading…</p>
+        ) : (
+          <p>
+            Folder: <code>{info.serverPath}</code><br />
+            MC {info.minecraftVersion ?? '?'}
+            {info.loader ? ` · ${info.loader} ${info.version ?? ''}` : ''} · RCON{' '}
+            {info.rcon.configured ? (info.rcon.reachable ? 'reachable' : 'unreachable') : 'not configured'}
+          </p>
+        )}
       </div>
       <div className="card">
         <h3>Appearance</h3>
@@ -136,12 +145,38 @@ function SettingsView({ theme, setTheme }) {
 }
 
 function AccountView({ user, onLogout }) {
+  const [sessions, setSessions] = useState(null);
+  useEffect(() => {
+    api('/api/auth/sessions').then(setSessions).catch(() => {});
+  }, []);
   return (
     <>
       <div className="card">
         <h3>Account · {user.username}</h3>
         <p className="muted">Signed in · role {user.role}</p>
         <button onClick={onLogout}>Sign out</button>
+      </div>
+      <div className="card">
+        <h3>Sessions · {sessions?.count ?? '…'}</h3>
+        {!sessions ? (
+          <p className="muted">Loading…</p>
+        ) : (
+          <table>
+            <tbody>
+              {sessions.sessions.map((s, i) => (
+                <tr key={i}>
+                  <td>
+                    {s.current ? 'This session' : 'Other session'}
+                    <br />
+                    <span className="muted num">
+                      since {new Date(s.createdAt).toLocaleString()} · expires {new Date(s.expiresAt).toLocaleDateString()}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
       <div className="card">
         <h3>Change password</h3>
