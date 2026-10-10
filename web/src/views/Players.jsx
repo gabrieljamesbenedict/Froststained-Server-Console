@@ -28,22 +28,15 @@ export default function Players() {
   const [tab, setTab] = useState('on');
   const [online, setOnline] = useState({ count: 0, players: [] });
   const [all, setAll] = useState({ count: 0, players: [] });
-  const [rcon, setRcon] = useState(null);
-  const [error, setError] = useState('');
   const [detail, setDetail] = useState(null);
   const [menu, setMenu] = useState(null);
-  const [name, setName] = useState('');
-  const [action, setAction] = useState('kick');
-  const [reason, setReason] = useState('');
-  const [message, setMessage] = useState('');
   const menuRef = useRef(null);
 
   const refreshOnline = async () => {
     try {
       setOnline(await api('/api/players'));
-      setError('');
     } catch (err) {
-      setError(err.message);
+      toast('Players refresh failed', err.message, 'err');
     }
   };
 
@@ -51,22 +44,13 @@ export default function Players() {
     try {
       setAll(await api('/api/players/all'));
     } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const refreshRcon = async () => {
-    try {
-      setRcon(await api('/api/rcon/status'));
-    } catch (err) {
-      setError(err.message);
+      toast('Players refresh failed', err.message, 'err');
     }
   };
 
   useEffect(() => {
     refreshOnline();
     refreshAll();
-    refreshRcon();
     const t = setInterval(refreshOnline, POLL.status);
     return () => clearInterval(t);
   }, []);
@@ -81,7 +65,6 @@ export default function Players() {
   }, [menu]);
 
   const act = async (route, body) => {
-    setError('');
     setMenu(null);
     try {
       const r = await api(`/api/players/${route}`, { method: 'POST', body });
@@ -91,17 +74,6 @@ export default function Players() {
     } catch (err) {
       toast('Player action failed', err.message, 'err');
     }
-  };
-
-  const submit = (e) => {
-    e.preventDefault();
-    if (name.trim()) act(action, { name: name.trim(), ...(reason ? { reason } : {}) });
-  };
-
-  const say = (e) => {
-    e.preventDefault();
-    if (message.trim()) act('say', { message: message.trim() });
-    setMessage('');
   };
 
   const byName = new Map(all.players.map((p) => [p.name.toLowerCase(), p]));
@@ -133,8 +105,7 @@ export default function Players() {
   };
 
   return (
-    <>
-      <div className="card fill">
+    <div className="card fill">
         <div className="row" style={{ margin: '0 0 8px 0' }}>
           <button className={tab === 'on' ? 'primary' : ''} onClick={() => { setTab('on'); setDetail(null); }}>
             Online · {online.count}
@@ -185,32 +156,5 @@ export default function Players() {
           </div>
         )}
       </div>
-      <div className="card">
-        <h3>Manual action</h3>
-        {rcon && !rcon.configured && (
-          <p>RCON not configured: set <code>rcon.password</code> and <code>enable-rcon=true</code> on the MC server.</p>
-        )}
-        {rcon?.configured && (
-          <p style={{ fontSize: 12 }}>
-            RCON {rcon.reachable ? 'reachable' : 'unreachable'} <button onClick={refreshRcon}>Recheck</button>
-          </p>
-        )}
-        <form onSubmit={submit} style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <input placeholder="Username" value={name} onChange={(e) => setName(e.target.value)} />
-          <select value={action} onChange={(e) => setAction(e.target.value)}>
-            {ACTIONS.map((a) => (
-              <option key={a} value={a}>{a}</option>
-            ))}
-          </select>
-          <input placeholder="Reason (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />
-          <button type="submit">Run</button>
-        </form>
-        <form onSubmit={say} style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <input placeholder="Broadcast message" value={message} onChange={(e) => setMessage(e.target.value)} style={{ flex: 1 }} />
-          <button type="submit">Say</button>
-        </form>
-        {error && <p style={{ color: 'var(--stain)' }}>{error}</p>}
-      </div>
-    </>
   );
 }
