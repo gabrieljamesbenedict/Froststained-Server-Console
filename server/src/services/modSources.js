@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { Readable } from 'node:stream';
 
 const MODRINTH_API = 'https://api.modrinth.com/v2';
 const CURSEFORGE_API = 'https://api.curseforge.com/v1';
@@ -72,4 +73,135 @@ export async function curseforgeCheck(apiKey, modId, { gameVersion, loader }) {
 function capLoader(loader) {
   const l = (LOADER_MAP[loader] ?? loader ?? '').toLowerCase();
   return l.charAt(0).toUpperCase() + l.slice(1);
+}
+
+// Modrinth project search for the Download Mods dialog.
+export async function modrinthSearch(query, { limit = 10 } = {}) {
+  const q = String(query ?? '').trim();
+  if (!q) return { hits: [] };
+  const params = new URLSearchParams({
+    query: q,
+    limit: String(Math.min(Math.max(Number(limit) || 10, 1), 25)),
+    index: 'relevance',
+    facets: JSON.stringify([['project_type:mod']]),
+  });
+  const res = await getJson(`${MODRINTH_API}/search?${params}`);
+  return {
+    hits: (res.hits ?? []).map((h) => ({
+      source: 'modrinth',
+      id: h.project_id ?? h.slug,
+      slug: h.slug ?? null,
+      title: h.title ?? h.slug,
+      description: h.description ?? '',
+      iconUrl: h.icon_url ?? null,
+      downloads: h.downloads ?? 0,
+    })),
+  };
+}
+
+// Newest-first versions for one project, filtered to game + loader.
+export async function modrinthVersions(projectId, { gameVersion, loader, limit = 10 } = {}) {
+  const params = new URLSearchParams({
+    game_versions: JSON.stringify([gameVersion]),
+    loaders: JSON.stringify([loader]),
+    limit: String(Math.min(Math.max(Number(limit) || 10, 1), 25)),
+  });
+  const versions = await getJson(`${MODRINTH_API}/project/${encodeURIComponent(projectId)}/version?${params}`);
+  return {
+    versions: versions.map((v) => ({
+      id: v.id,
+      versionNumber: v.version_number ?? v.name,
+      gameVersions: v.game_versions ?? [],
+      loaders: v.loaders ?? [],
+      date: v.date_published ?? null,
+      files: (v.files ?? [])
+        .filter((f) => f.filename?.endsWith('.jar'))
+        .map((f) => ({ filename: f.filename, url: f.url, primary: !!f.primary, size: f.size ?? null })),
+    })),
+  };
+}
+
+// CurseForge mod search. Needs the console API key.
+export async function curseforgeSearch(apiKey, query, { limit = 10 } = {}) {
+  const q = String(query ?? '').trim();
+  if (!q) return { hits: [] };
+  const params = new URLSearchParams({
+    gameId: '432',
+    searchFilter: q,
+    pageSize: String(Math.min(Math.max(Number(limit) || 10, 1), 25)),
+    sortField: '2', // popularity
+    sortOrder: 'desc',
+  });
+  const res = await getJson(`${CURSEFORGE_API}/mods/search?${params}`, { 'x-api-key': apiKey });
+  return {
+    hits: (res.data ?? []).map((m) => ({
+      source: 'curseforge',
+      id: m.id,
+      slug: m.slug ?? null,
+      title: m.name ?? m.slug,
+      description: m.summary ?? '',
+      iconUrl: m.logo?.thumbnailUrl ?? null,
+      downloads: m.downloadCount ?? 0,
+      pageUrl: m.links?.websiteUrl ?? null,
+    })),
+  };
+}
+
+// Newest-first CurseForge files for one mod id.
+export async function curseforgeFiles(apiKey, modId, { gameVersion, loader, limit = 10 } = {}) {
+  const params = new URLSearchParams({
+    gameVersion,
+    modLoaderType: capLoader(loader),
+    pageSize: String(Math.min(Math.max(Number(limit) || 10, 1), 25)),
+  });
+  const res = await getJson(
+    `${CURSEFORGE_API}/mods/${encodeURIComponent(String(modId))}/files?${params}`,
+    { 'x-api-key': apiKey },
+  );
+  return {
+    versions: (res.data ?? []).map((f) => ({
+      id: f.id,
+      versionNumber: f.displayName ?? String(f.id),
+      gameVersions: f.gameVersions ?? [],
+      date: f.fileDate ?? null,
+      files: (f.downloadUrl ? [{ filename: f.fileName, url: f.downloadUrl, primary: true, size: f.fileLength ?? null }] : []),
+    })),
+  };
+}
+
+const MAX_DOWNLOAD_MB = 200;
+
+// Stream a remote jar straight to disk with a size cap.
+export async function downloadJar(url, dest, headers = {}) {
+  const res = await fetch(url, { headers: { 'User-Agent': UA, ...headers }, signal: AbortSignal.timeout(60000) });
+  if (!res.ok || !res.body) {
+    const err = new Error(`download failed (${res.status})`);
+    err.code = 'UPSTREAM';
+    throw err;
+  }
+  const len = Number(res.headers.get('content-length')) || 0;
+  if (len > MAX_DOWNLOAD_MB * 1024 * 1024) {
+    const err = new Error('remote file is over 200 MB');
+    err.code = 'UPSTREAM';
+    throw err;
+  }
+  await new Promise((resolve, reject) => {
+    let bytes = 0;
+    // Undici gives a web stream; convert for .pipe counting.
+    const stream = Readable.fromWeb(res.body);
+    const out = fs.createWriteStream(dest);
+    const abort = (err) => {
+      try { stream.destroy(); } catch { /* already torn down */ }
+      try { out.destroy(); } catch { /* already torn down */ }
+      reject(err);
+    };
+    stream.on('error', abort);
+    out.on('error', abort);
+    out.on('finish', resolve);
+    stream.on('data', (d) => {
+      bytes += d.length;
+      if (bytes > MAX_DOWNLOAD_MB * 1024 * 1024) abort(new Error('remote file is over 200 MB'));
+    });
+    stream.pipe(out);
+  });
 }
