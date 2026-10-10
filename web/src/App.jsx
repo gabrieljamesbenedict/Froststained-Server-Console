@@ -4,6 +4,7 @@ import { AuthForm, Backups, Mods, PasswordForm } from './views/legacy.jsx';
 import Console from './views/Console.jsx';
 import Metrics from './views/Metrics.jsx';
 import Players from './views/Players.jsx';
+import Files from './views/Files.jsx';
 import Dashboard from './views/Dashboard.jsx';
 
 const TITLES = {
@@ -133,15 +134,6 @@ function SettingsView({ theme, setTheme }) {
   );
 }
 
-function FilesPlaceholder() {
-  return (
-    <div className="card">
-      <h3>Server files</h3>
-      <p className="muted">File browser (browse, view, edit, upload) lands with its backend slice — PLAN Phase 5.</p>
-    </div>
-  );
-}
-
 function AccountView({ user, onLogout }) {
   return (
     <>
@@ -211,7 +203,7 @@ export default function App() {
     metrics: <Metrics />,
     players: <Players />,
     mods: <Mods />,
-    files: <FilesPlaceholder />,
+    files: <Files />,
     backups: <Backups />,
     settings: <SettingsView theme={theme} setTheme={setTheme} />,
     account: <AccountView user={state.user} onLogout={logout} />,
