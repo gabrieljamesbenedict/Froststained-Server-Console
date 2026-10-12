@@ -18,7 +18,7 @@ Minecraft Java server management console for LAN. Single server per console inst
 
 ## Quickstart
 
-1. Copy `config.example.yml` to `config.yml` and set `server_path`.
+1. Copy `config.example.yaml` to `config.yaml` and set `server_path`.
 2. `npm install`
 3. `npm run dev:server` + `npm run dev:web`
 4. Open `http://<lan-ip>:3100`
@@ -33,7 +33,7 @@ npm run release
 ```
 
 Produces `release/` with `fssc.exe` (backend + frontend embedded in the node
-binary), `config.example.yml`, and `README.txt` — that folder is the whole
+binary), `config.example.yaml`, and `README.md` — that folder is the whole
 distribution. The exe reads `config.yaml` from beside it; `data/` and
 `backups/` are created on first run.
 

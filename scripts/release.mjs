@@ -1,9 +1,9 @@
 // Single-executable build for Froststained Server Console.
 //
 // Produces release/ containing:
-//   fssc.exe          - node binary with backend + frontend embedded
-//   config.example.yml - user copies to config.yaml
-//   README.txt        - first-run instructions
+//   fssc.exe            - node binary with backend + frontend embedded
+//   config.example.yaml - user copies to config.yaml
+//   README.md           - setup guide for the user
 //
 // Usage: npm run release
 // Dev is untouched: node src/index.js still serves web/dist from disk.
@@ -89,8 +89,14 @@ run(path.join(ROOT, 'node_modules', '.bin', process.platform === 'win32' ? 'post
   [path.join(OUT, EXE), 'NODE_SEA_BLOB', path.join(SERVER_DIR, BLOB), '--sentinel-fuse', FUSE]);
 
 console.log('7/7 packaging');
-fs.copyFileSync(path.join(ROOT, 'config.example.yml'), path.join(OUT, 'config.example.yml'));
-fs.copyFileSync(path.join(ROOT, 'README.txt'), path.join(OUT, 'README.txt'));
+// Drop previous config/readme files so renames do not leave stale copies in
+// the shipped folder (it must hold exactly the exe, sample config and readme).
+for (const f of fs.readdirSync(OUT)) {
+  if (/^(config\.example\..*|README\..*)$/i.test(f)) fs.rmSync(path.join(OUT, f), { force: true });
+}
+fs.copyFileSync(path.join(ROOT, 'config.example.yaml'), path.join(OUT, 'config.example.yaml'));
+// Ships as README.md; the repo README.md is the developer guide.
+fs.copyFileSync(path.join(ROOT, 'README.release.md'), path.join(OUT, 'README.md'));
 fs.rmSync(SERVER_BUILD, { recursive: true, force: true });
 fs.rmSync(path.join(SERVER_DIR, BLOB), { force: true });
 fs.rmSync(path.join(SERVER_DIR, 'sea-config.json'), { force: true });
