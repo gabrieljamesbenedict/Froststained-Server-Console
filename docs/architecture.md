@@ -16,7 +16,7 @@ Browser → Fastify [:3100] → serves web/dist + /api + /ws
 Froststained-Server-Console/
 ├── server/          # Backend workspace (Fastify + ws + node:sqlite)
 │   └── src/
-│       ├── index.js         # Backend entry point
+│       ├── index.mjs        # Backend entry point
 │       ├── config.js        # YAML config loader + CLI flags + validation
 │       ├── db.js            # SQLite open + schema + audit helper
 │       ├── ws/console.js    # WebSocket /ws/console live stream
@@ -31,7 +31,7 @@ Froststained-Server-Console/
 │       └── views/           # Dashboard, Console, Metrics, Players, Mods,
 │                            # Files, AdminUsers, shared
 ├── docs/            # This file + design.md
-├── config.example.yml
+├── config.example.yaml
 └── package.json     # Root workspace manifest
 ```
 
@@ -43,7 +43,7 @@ Froststained-Server-Console/
 
 | File | Responsibility |
 |---|---|
-| `index.js` | App bootstrap: load config, decorate Fastify, register routes, serve `web/dist`, graceful shutdown. |
+| `index.mjs` | App bootstrap: load config, decorate Fastify, register routes, serve `web/dist`, graceful shutdown. |
 | `config.js` | YAML config + CLI flags (`--config`, `--port`, `--host`, `--data-file`, `--backup-dir`) + validation. Resolution: `--config` → `FROSTSTAINED_CONFIG` env → `./config.yaml` → `./config.yml`. |
 | `db.js` | `node:sqlite` open + schema (`users`, `sessions`, `audit_log`) + `audit()` helper. |
 | `ws/console.js` | `/ws/console` — streams MC output to browser. Auth via session cookie on upgrade. |

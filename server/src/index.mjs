@@ -47,7 +47,7 @@ if (!fs.existsSync(config.configPath)) {
   console.error('');
   console.error('  No console config found.');
   console.error(`  Looked for: ${config.configPath}`);
-  console.error('  Copy config.example.yml next to this exe, rename it to');
+  console.error('  Copy config.example.yaml next to this exe, rename it to');
   console.error('  config.yaml, then set server_path and rcon.password.');
   console.error('');
   process.exit(1);
